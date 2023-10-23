@@ -10,8 +10,6 @@ import getUsers from "../functions/getUsers";
 import { setUsers } from "../redux/UsersSlice";
 import getRooms from "../functions/getRooms";
 import { setRooms } from "../redux/RoomSlice";
-import { setSocket } from "../redux/SocketSlice";
-import io from 'socket.io-client';
 
 const ChatPage = () => {
   const socket = useSocket()
@@ -32,7 +30,7 @@ const ChatPage = () => {
       }
       else{
         // console.log(me.rooms)
-        dispatch(setMyRooms(me.rooms))
+        dispatch(setMyRooms(me.userrooms))
       }
       if (users) {
         dispatch(setUsers(users));

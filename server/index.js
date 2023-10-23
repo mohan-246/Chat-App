@@ -5,10 +5,10 @@ import express from "express";
 import cors from "cors";
 import { v4 as uuidv4 } from "uuid";
 
-const User = mongoose.model("User", {
+const UserSchema = new mongoose.Schema({
   name: String,
   id: String,
-  rooms: [{ type: mongoose.Schema.Types.Mixed }],
+  rooms: [{ type: mongoose.Schema.Types.ObjectId, ref: "Rooms" }],
 });
 
 const Rooms = mongoose.model("Rooms", {
@@ -25,6 +25,8 @@ const Rooms = mongoose.model("Rooms", {
     },
   ],
 });
+
+const User = mongoose.model("User", UserSchema);
 
 const UserMap = new Map();
 const RoomMap = {};
@@ -43,7 +45,7 @@ app.use(
 mongoose.connect("mongodb://127.0.0.1:27017/chatapp");
 
 async function joinRooms(socket, userId) {
-  const user = await User.findOne({ id: userId });
+  const user = await User.findOne({ id: userId }).populate("rooms");
 
   if (user) {
     for (const room of user.rooms) {
@@ -58,7 +60,7 @@ async function joinRooms(socket, userId) {
 }
 
 async function leaveRooms(socket, userId) {
-  const user = await User.findOne({ id: userId });
+  const user = await User.findOne({ id: userId }).populate("rooms");
 
   if (user) {
     for (const room of user.rooms) {
@@ -94,14 +96,9 @@ io.on("connection", (socket) => {
     }
     const user = await User.findOne({ id: userId });
 
-    if (!user.rooms.some((r) => r.id === chatId)) {
-      user.rooms.push({
-        id: room.id,
-        name: room.name,
-        members: room.members,
-        type: room.type,
-      });
-      await User.updateOne({ id: userId }, { rooms: user.rooms });
+    if (!user.rooms.includes(room._id)) {
+      user.rooms.push(room._id);
+      await user.save();
     }
     if (!RoomMap[chatId]) {
       RoomMap[chatId] = [];
@@ -111,73 +108,63 @@ io.on("connection", (socket) => {
   });
 
   socket.on("check-room", async ({ users, name }) => {
-  const room = await Rooms.findOne({
-    members: {
-      $all: users,
-      $size: users.length,
-    },
+    const room = await Rooms.findOne({
+      members: {
+        $all: users,
+        $size: users.length,
+      },
+    });
+
+    if (room) {
+      if (!room.name) {
+        room.name = name;
+        await room.save();
+      }
+
+      const userRoomUpdatePromises = users.map(async (userid) => {
+        const u = await User.findOne({ id: userid });
+        if (!u.rooms.includes(room._id)) {
+          u.rooms.push(room._id);
+          await u.save();
+        }
+      });
+
+      await Promise.all(userRoomUpdatePromises);
+
+      io.to(room.id).emit("checked-room", room);
+    } else {
+      const newRoom = new Rooms({
+        id: uuidv4(),
+        type: "private",
+        members: users,
+        name: name,
+        messages: [],
+      });
+
+      async function saveRoomAndEmit(newRoom, users, UserMap, io) {
+        try {
+          await newRoom.save();
+
+          users.forEach(async (userid) => {
+            const u = await User.findOne({ id: userid });
+            if (!u.rooms.includes(newRoom._id)) {
+              u.rooms.push(newRoom._id);
+              await u.save();
+            }
+
+            const [socket] = UserMap.get(userid);
+            socket.join(newRoom.id);
+          });
+
+          io.to(newRoom.id).emit("checked-room", newRoom);
+        } catch (error) {
+          console.log("Error while saving and emitting room:", error);
+        }
+      }
+
+      saveRoomAndEmit(newRoom, users, UserMap, io);
+    }
   });
-
-  if (room) {
-    if (!room.name) {
-      room.name = name;
-      await room.save();
-    }
-
-    const userRoomUpdatePromises = users.map(async (userid) => {
-      const u = await User.findOne({ id: userid });
-      const roomIndex = u.rooms.findIndex((r) => r.id === room.id);
-
-      if (roomIndex !== -1) {
-        u.rooms[roomIndex].name = room.name;
-        await User.updateOne({ _id: u._id }, { $set: { 'rooms.$': u.rooms } });
-      }
-    });
-
-    await Promise.all(userRoomUpdatePromises);
-
-    io.to(room.id).emit("checked-room", room);
-  } else {
-    const newRoom = new Rooms({
-      id: uuidv4(),
-      type: "private",
-      members: [...users],
-      name: name,
-      messages: [],
-    });
-
-    // Define an asynchronous function to save the room and emit the event
-    async function saveRoomAndEmit(newRoom, users, UserMap, io) {
-      try {
-        await newRoom.save();
-
-        users.forEach(async (userid) => {
-          const u = await User.findOne({ id: userid });
-
-          if (!u.rooms.some((r) => r.id === newRoom.id)) {
-            u.rooms.push({
-              id: newRoom.id,
-              name: newRoom.name,
-              type: newRoom.type,
-              members: newRoom.members,
-            });
-            await u.save();
-          }
-
-          const [socket] = UserMap.get(userid);
-          socket.join(newRoom.id);
-        });
-
-        io.to(newRoom.id).emit("checked-room", newRoom);
-      } catch (error) {
-        console.log("Error while saving and emitting room:", error);
-      }
-    }
-
-    saveRoomAndEmit(newRoom, users, UserMap, io);
-  }
-});
-
 
   socket.on("send-message", async (message) => {
     try {
@@ -211,7 +198,18 @@ app.get("/api/user/:userId", async (req, res) => {
     return res.status(404).json({ message: "No user found" });
   }
 
-  return res.json(user);
+  const userrooms = [];
+  for (const roomid of user.rooms) {
+    const room = await Rooms.findOne({ _id: roomid });
+    userrooms.push({
+      id: room.id,
+      name: room.name,
+      members: room.members,
+      type: room.type,
+    });
+  }
+
+  return res.json({ userr: user, userrooms: userrooms });
 });
 
 app.get("/api/users", async (req, res) => {

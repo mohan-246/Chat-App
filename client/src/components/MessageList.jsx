@@ -108,7 +108,8 @@ const MessageList = ({ socket }) => {
       <div className="flex">
         <input
           type="text"
-          className={`my-2 rounded mx-2 ${selecting ? "w-[80%] " : "w-full "}`}
+          placeholder="Start new chat"
+          className={`my-2 px-2 rounded mx-2 ${selecting ? "w-[80%] " : "w-full "}`}
           value={searchUser}
           onChange={(e) => setSearchUser(e.target.value)}
         ></input>
@@ -122,16 +123,14 @@ const MessageList = ({ socket }) => {
         )}
       </div>
 
-      {searching ? (
-        <p className="bg-blue-200">results </p>
-      ) : (
-        <p className="bg-blue-200">Rooms </p>
-      )}
+      
+        <p className="bg-blue-300 px-2">{searching ? "Search Results" : "Chats"}</p>
+     
       <div>
         {searching ? (
           foundUsers && foundUsers.length > 0 ? (
             foundUsers.map((user, index) => (
-              <p className="h-10 my-1 rounded bg-blue-300" key={index}>
+              <p className="h-10 my-1  bg-blue-200" key={index}>
                 {user.name}
                 <label className="float-right">
                   <input
@@ -144,19 +143,19 @@ const MessageList = ({ socket }) => {
               </p>
             ))
           ) : (
-            <p className="h-10 my-1 rounded bg-blue-300 "> user Not found</p>
+            <p className="h-10 my-1  bg-blue-200 "> user Not found</p>
           )
         ) : myRooms && myRooms.length > 0 ? (
           myRooms.map((room, index) => (
             <p
-              className="h-10 my-1 rounded bg-blue-300 "
+              className="h-[35px] py-1 px-2 border bg-blue-200 "
               key={index}
               onClick={() => dispatch(setCurChat(room.id))}
             >
               {room.name
                 ? room.name
                 : room.members
-                    .filter((memberId) => memberId !== user.id)
+                    ?.filter((memberId) => memberId !== user.id)
                     .map((memberId) => {
                       const member = users.find((user) => user.id === memberId);
                       return (
@@ -168,7 +167,7 @@ const MessageList = ({ socket }) => {
             </p>
           ))
         ) : (
-          <p className="h-10 my-1 rounded bg-blue-300 "> room Not found</p>
+          <p className="h-10 my-1 rounded bg-blue-200 "> room Not found</p>
         )}
       </div>
     </div>
