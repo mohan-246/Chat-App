@@ -1,0 +1,79 @@
+# Node.js
+node_modules/
+
+# Build files
+build/
+dist/
+*.min.js
+
+# Dependency directories
+jspm_packages/
+typings/
+typings.json
+
+# IDE files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Directory for storing test caches
+__pycache__/
+
+# Environment
+.env
+*.env
+.env.local
+.env.*.local
+
+# Environments
+.env.development
+.env.test
+.env.production
+
+# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
+.grunt
+
+# Bower dependency directory (https://bower.io/)
+bower_components/
+
+# Python virtual environments
+__pycache__/
+venv/
+env/
+ENV/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional per-user cache
+.yarn-cache/
+.pnpm-store/
+.pnpm-cache/
+npm-debug.log*
+
+# Optional editors
+*.sublime-project
+*.sublime-workspace
+*.komodoproject
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
