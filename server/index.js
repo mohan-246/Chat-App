@@ -41,11 +41,14 @@ const io = new Server(server
   },
 }
 );
-app.use(
-  cors({
-    origin: "https://chat-frontend-n5np.onrender.com/",
-  })
-);
+app.use(function (req, res, next) {
+  res.setHeader('Access-Control-Allow-Origin', 'https://chat-frontend-n5np.onrender.com');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, content-type');
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  next();
+});
+
 
 mongoose.connect(process.env.MONGODB_URL);
 
