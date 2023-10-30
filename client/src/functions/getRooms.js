@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-async function getRooms() {
+async function getRooms(userId) {
     try {
-      const response = await axios.get(`http://localhost:3001/api/rooms`);
+      const response = await axios.get(`http://localhost:3001/api/rooms/${userId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching rooms:', error);

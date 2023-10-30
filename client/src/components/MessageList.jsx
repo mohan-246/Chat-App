@@ -102,9 +102,9 @@ const MessageList = ({ socket }) => {
       setCheckboxes({ ...checkboxes, [userid]: true });
     }
   }
-
+ 
   return (
-    <div className="h-screen bg-blue-100">
+    <div className="h-screen bg-indigo-100">
       <div className="flex">
         <input
           type="text"
@@ -124,13 +124,13 @@ const MessageList = ({ socket }) => {
       </div>
 
       
-        <p className="bg-blue-300 px-2">{searching ? "Search Results" : "Chats"}</p>
+        <p className="bg-indigo-300 px-2">{searching ? "Search Results" : "Chats"}</p>
      
       <div>
         {searching ? (
           foundUsers && foundUsers.length > 0 ? (
             foundUsers.map((user, index) => (
-              <p className="h-10 my-1  bg-blue-200" key={index}>
+              <p className="h-10 my-1  bg-indigo-200" key={index}>
                 {user.name}
                 <label className="float-right">
                   <input
@@ -143,12 +143,12 @@ const MessageList = ({ socket }) => {
               </p>
             ))
           ) : (
-            <p className="h-10 my-1  bg-blue-200 "> user Not found</p>
+            <p className="h-10 my-1  bg-indigo-200 "> User Not found</p>
           )
         ) : myRooms && myRooms.length > 0 ? (
           myRooms.map((room, index) => (
             <p
-              className="h-[35px] py-1 px-2 border bg-blue-200 "
+              className="h-[35px] py-1 px-2 border bg-indigo-200 "
               key={index}
               onClick={() => dispatch(setCurChat(room.id))}
             >
@@ -167,7 +167,7 @@ const MessageList = ({ socket }) => {
             </p>
           ))
         ) : (
-          <p className="h-10 my-1 rounded bg-blue-200 "> room Not found</p>
+          <p className="h-10 my-1 rounded bg-indigo-200 "> Join a room to start chatting</p>
         )}
       </div>
     </div>

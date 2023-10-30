@@ -12,43 +12,40 @@ import getRooms from "../functions/getRooms";
 import { setRooms } from "../redux/RoomSlice";
 
 const ChatPage = () => {
-  const socket = useSocket()
+  const socket = useSocket();
   const { user } = useUser();
   const dispatch = useDispatch();
   useEffect(() => {
-
-    
-    async function fetchData() {
-      const me = await checkUser(user.id);
-      const users = await getUsers();
-      const rooms = await getRooms();
-
-      dispatch(setName(user.firstName));
-      dispatch(setId(user.id));
-      if (!me) {
-        socket.emit("new-user");
-      }
-      else{
-        // console.log(me.rooms)
-        dispatch(setMyRooms(me.userrooms))
-      }
-      if (users) {
-        dispatch(setUsers(users));
-      }
-      if (rooms) {
-        dispatch(setRooms(rooms));
-      }
-    }
     fetchData();
   }, []);
+  async function fetchData() {
+    const me = await checkUser(user.id);
+    const users = await getUsers();
+    const rooms = await getRooms(user.id);
+
+    dispatch(setName(user.firstName));
+    dispatch(setId(user.id));
+    if (!me) {
+      socket.emit("new-user");
+    } else {
+      // console.log(me.rooms)
+      dispatch(setMyRooms(me.userrooms));
+    }
+    if (users) {
+      dispatch(setUsers(users));
+    }
+    if (rooms) {
+      dispatch(setRooms(rooms));
+    }
+  }
   return (
     <div className="h-screen">
       <div className="grid grid-cols-3 gap-0">
         <div className="col-span-1">
-          <MessageList socket={socket}/>
+          <MessageList socket={socket} />
         </div>
         <div className="col-span-2">
-          <ChatBox  socket={socket}/>
+          <ChatBox socket={socket} fetchData={fetchData}/>
         </div>
       </div>
     </div>

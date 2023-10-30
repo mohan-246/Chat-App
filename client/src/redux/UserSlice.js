@@ -1,4 +1,5 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
+
 
 const initialState = {
   id: null,
@@ -8,7 +9,7 @@ const initialState = {
 };
 
 const userSlice = createSlice({
-  name: 'user',
+  name: "user",
   initialState,
   reducers: {
     setId: (state, action) => {
@@ -18,25 +19,27 @@ const userSlice = createSlice({
       state.name = action.payload;
     },
     setCurChat: (state, action) => {
-      
       state.curChat = action.payload;
     },
     setMyRooms: (state, action) => {
-        
-        state.myrooms = action.payload;
+      state.myrooms = action.payload;
     },
-    joinRoom:(state, action) => {
+    joinRoom: (state, action) => {
       const { id } = action.payload;
       const roomIndex = state.myrooms.findIndex((room) => room.id == id);
-      if (roomIndex  === -1){
+      if (roomIndex === -1) {
         state.myrooms.push(action.payload);
       }
-      
-    }
+    },
+    leaveRoom: (state, action) => {
+      state.myrooms = state.myrooms.filter(
+        (room) => room.id !== action.payload
+      );
+    },
   },
 });
 
-export const { setId, setName , setMyRooms ,joinRoom , setCurChat } = userSlice.actions;
-
+export const { setId, setName, setMyRooms, leaveRoom , joinRoom, setCurChat } =
+  userSlice.actions;
 
 export default userSlice.reducer;
