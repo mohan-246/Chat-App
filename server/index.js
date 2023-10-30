@@ -33,11 +33,14 @@ const UserMap = new Map();
 const RoomMap = {};
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "https://chat-frontend-n5np.onrender.com/",
-  },
-});
+const io = new Server(server
+//   , 
+//   {
+//   cors: {
+//     origin: "https://chat-frontend-n5np.onrender.com/",
+//   },
+// }
+);
 // app.use(
 //   cors({
 //     origin: "https://chat-frontend-n5np.onrender.com/",
