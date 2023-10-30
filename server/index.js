@@ -24,7 +24,7 @@ const Rooms = mongoose.model("Rooms", {
       content: String,
     },
   ],
-});
+}, { versionKey: 'version' });
 
 const User = mongoose.model("User", UserSchema);
 
@@ -135,7 +135,7 @@ io.on("connection", (socket) => {
     } else {
       const newRoom = new Rooms({
         id: uuidv4(),
-        type: "private",
+        type: `${users.length > 2 ? "private" : "group"}`,
         members: users,
         name: name,
         messages: [],
@@ -179,6 +179,23 @@ io.on("connection", (socket) => {
       console.log("Error sending message:", error);
     }
   });
+  socket.on("leave-room", async ({ user, room }) => {
+    console.log(user, room);
+    const u = await User.findOne({ id: user });
+    const r = await Rooms.findOne({ id: room });
+
+    r.members.remove(user);
+    u.rooms.remove(r._id);
+
+    try {
+      await r.save();
+    } catch (error) {
+      console.error("Error while saving room:", error);
+    }
+    await u.save();
+    socket.leave(room);
+    io.to(room).emit("left-room", { user, room });
+  });
 
   socket.on("reconnect", (attemptNumber) => {
     console.log(`Reconnected after attempt ${attemptNumber} id ${socket.id}`);
@@ -220,9 +237,20 @@ app.get("/api/users", async (req, res) => {
   return res.json(users);
 });
 
-app.get("/api/rooms", async (req, res) => {
+app.get("/api/rooms/:userId", async (req, res) => {
+  const userId = req.params.userId;
+  // console.log(userId);
   try {
-    const rooms = await Rooms.find();
+    const user = await User.findOne({ id: userId });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const roomIds = user.rooms; // Assuming the user's rooms array contains room IDs
+
+    const rooms = await Rooms.find({ _id: { $in: roomIds } });
+
     res.json(rooms);
   } catch (error) {
     console.log("Error fetching rooms:", error);
