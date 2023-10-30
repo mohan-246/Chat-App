@@ -42,7 +42,7 @@ app.use(
     origin: "http://localhost:5173",
   })
 );
-mongoose.connect("mongodb://127.0.0.1:27017/chatapp");
+mongoose.connect(process.env.MONGODB_URL);
 
 async function joinRooms(socket, userId) {
   const user = await User.findOne({ id: userId }).populate("rooms");
