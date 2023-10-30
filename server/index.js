@@ -11,21 +11,26 @@ const UserSchema = new mongoose.Schema({
   rooms: [{ type: mongoose.Schema.Types.ObjectId, ref: "Rooms" }],
 });
 
-const Rooms = mongoose.model("Rooms", {
-  id: String,
-  type: String,
-  name: String,
-  members: [String],
-  messages: [
-    {
-      from: String,
-      to: String,
-      time: String,
-      content: String,
-    },
-  ],
-}, { versionKey: 'version' });
+const Rooms = mongoose.model(
+  "Rooms",
+  {
+    id: String,
+    type: String,
+    name: String,
+    members: [String],
+    messages: [
+      {
+        from: String,
+        to: String,
+        time: String,
+        content: String,
+      },
+    ],
+  },
+  { versionKey: "version" }
+);
 
+const allowedOrigins = ["https://chat-frontend-n5np.onrender.com"];
 const User = mongoose.model("User", UserSchema);
 
 const UserMap = new Map();
@@ -37,11 +42,24 @@ const io = new Server(server, {
     origin: "https://chat-frontend-n5np.onrender.com/",
   },
 });
-app.use(
-  cors({
-    origin: "https://chat-frontend-n5np.onrender.com/",
-  })
-);
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+
+  // You can configure other CORS headers here.
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Credentials", true);
+
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200); // Pre-flight request response
+  } else {
+    next();
+  }
+});
 mongoose.connect(process.env.MONGODB_URL);
 
 async function joinRooms(socket, userId) {
