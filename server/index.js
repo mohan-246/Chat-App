@@ -26,31 +26,27 @@ const Rooms = mongoose.model("Rooms", {
   ],
 }, { versionKey: 'version' });
 
-const allowedOrigins = ['https://chat-frontend-n5np.onrender.com'];
 const User = mongoose.model("User", UserSchema);
 
 const UserMap = new Map();
 const RoomMap = {};
 const app = express();
-const server = http.createServer(app);
+const server = http.createServer(app,{});
 const io = new Server(server
   , 
   {
   cors: {
-    origin: "https://chat-frontend-n5np.onrender.com/",
+    // origin: "https://chat-frontend-n5np.onrender.com/",
+    origin: "*",
   },
 }
 );
-app.use(function (req, res, next) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://chat-frontend-n5np.onrender.com');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, content-type');
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  next();
+app.use(cors());
+
+console.log(process.env.MONGODB_URL,"h")
+mongoose.connect("mongodb://127.0.0.1:27017/chatapp" ,{
+  useNewUrlParser: true
 });
-
-
-mongoose.connect(process.env.MONGODB_URL);
 
 async function joinRooms(socket, userId) {
   const user = await User.findOne({ id: userId }).populate("rooms");
