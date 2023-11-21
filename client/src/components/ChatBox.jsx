@@ -25,29 +25,20 @@ const ChatBox = ({ socket }) => {
 
   useEffect(() => {
     scrollToBottom();
-    // console.log(rooms, "m", myRooms, "u", users);
   }, [curChat, rooms, myRooms, users]);
 
   useEffect(() => {
     socket.on("sent-message", handleSentMessage);
-    // socket.on("left-room", handleLeftRoom);
+    socket.on("left-room", handleLeftRoom);
 
     return () => {
       socket.off("sent-message", handleSentMessage);
-      // socket.off("left-room", handleLeftRoom);
+      socket.off("left-room", handleLeftRoom);
     };
   }, [socket]);
   function handleLeftRoom({ user, room }) {
-    const foundUser = users.find((u) => u.id === user);
-    if (foundUser) {
-      const message = `${foundUser.name} has left the chat`;
-      sendIoMessage(message);
-    } else {
-      console.error(`User with ID ${user} not found.`);
-    }
-    setTimeout(() => {
-      console.log(users, rooms);
-    }, 1000);
+    dispatch(removeUserFromRoom({user , room}))
+    setCurChat(curChat)
   }
 
   function handleSentMessage(message) {
@@ -106,10 +97,8 @@ const ChatBox = ({ socket }) => {
 
     if (foundRoom) {
       socket.emit("leave-room", { user: user.id, room: curChat });
-      sendIoMessage(`${user.name} has left the chat`)
-      dispatch(removeUserRoom({ user: user.id, foundRoom }));
-      dispatch(removeUserFromRoom({ roomId: foundRoom._id, userId: user.id }));
-      dispatch(leaveRoom({ room: curChat }));
+      sendIoMessage(`${user.fullName} has left the chat`)
+      dispatch(leaveRoom({ roomid: curChat }));
       dispatch(setCurChat(null))
       
     } else {

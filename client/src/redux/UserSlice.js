@@ -33,7 +33,7 @@ const userSlice = createSlice({
     },
     leaveRoom: (state, action) => {
       state.myrooms = state.myrooms.filter(
-        (room) => room.id !== action.payload
+        (room) => room.id !== action.payload.roomid
       );
     },
   },

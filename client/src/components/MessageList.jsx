@@ -36,10 +36,12 @@ const MessageList = ({ socket }) => {
       })
     );
   };
-
+  
   useEffect(() => {
-    const usersFound = users.filter((foundUser) =>
-      foundUser.name.toLowerCase().includes(searchUser.toLowerCase()) && foundUser.id != user.id
+    const usersFound = users.filter(
+      (foundUser) =>
+        foundUser.name.toLowerCase().includes(searchUser.toLowerCase()) &&
+        foundUser.id != user.id
     );
     setFoundUsers(usersFound);
     if (searchUser && searchUser.length > 0) {
@@ -51,43 +53,39 @@ const MessageList = ({ socket }) => {
 
   useEffect(() => {
     socket.on("checked-room", handleCheckedRoom);
+    socket.on("private-room-exits", () => window.alert("private chat with user already exists"))
     return () => {
       socket.off("checked-room", handleCheckedRoom);
+      socket.off("private-room-exits",  () => window.alert("private chat with user already exists"))
     };
   }, [socket]);
 
-  function CheckAndCreateRoom(userid) {
-    if (selectedUsers.length > 2 && !named) {
-      const groupInput = window.prompt("Enter Group Name");
-  
+  function CheckAndCreateRoom() {
+    if (selectedUsers.length > 2) {
+      let groupInput = window.prompt("Enter Group Name");
       if (groupInput && groupInput.trim() !== "") {
-        setGroupName(groupInput);
         setNamed(true);
       } else {
-        return; // Exit the function if the user cancels or doesn't enter a valid name
+        window.alert("Please enter a valid group name");
+        return;
       }
-    }
-  
-    const roomName = groupName;
-  
-    if (selectedUsers.length > 2) {
-      socket.emit("check-room", { users: selectedUsers, name: roomName });
+
+      socket.emit("check-room", {
+        users: selectedUsers,
+        name: groupInput,
+        type: "group",
+      });
+
+      window.alert(groupInput);
     } else {
-      socket.emit("check-room", { users: selectedUsers });
+      socket.emit("check-room", { users: selectedUsers, type: "private" });
     }
-  
-    if (confirming) {
-      setConfirming(false);
-      setSelecting(false);
-      setSelectedUsers([user.id]);
-      setNamed(false);
-      setGroupName("");
-      setSearching(false);
-      // Uncheck all checkboxes by resetting the state
-      setCheckboxes({});
-    } else {
-      setConfirming(true);
-    }
+
+    setSelecting(false);
+    setNamed(false);
+    setSearching(false);
+    setSelectedUsers([user.id]);
+    setCheckboxes({});
   }
 
   function AddUserToRoom(userid) {
@@ -102,14 +100,16 @@ const MessageList = ({ socket }) => {
       setCheckboxes({ ...checkboxes, [userid]: true });
     }
   }
- 
+
   return (
     <div className="h-screen bg-indigo-100">
       <div className="flex">
         <input
           type="text"
           placeholder="Start new chat"
-          className={`my-2 px-2 rounded mx-2 ${selecting ? "w-[80%] " : "w-full "}`}
+          className={`my-2 px-2 rounded mx-2 ${
+            selecting ? "w-[80%] " : "w-full "
+          }`}
           value={searchUser}
           onChange={(e) => setSearchUser(e.target.value)}
         ></input>
@@ -118,14 +118,15 @@ const MessageList = ({ socket }) => {
             className="w-[20%] mx-1 bg-white my-2 rounded"
             onClick={() => CheckAndCreateRoom()}
           >
-            {confirming ? "Confirm" : "Add"}
+            Add
           </button>
         )}
       </div>
 
-      
-        <p className="bg-indigo-300 px-2">{searching ? "Search Results" : "Chats"}</p>
-     
+      <p className="bg-indigo-300 px-2">
+        {searching ? "Search Results" : "Chats"}
+      </p>
+
       <div>
         {searching ? (
           foundUsers && foundUsers.length > 0 ? (
@@ -167,7 +168,10 @@ const MessageList = ({ socket }) => {
             </p>
           ))
         ) : (
-          <p className="h-10 my-1 rounded bg-indigo-200 "> Join a room to start chatting</p>
+          <p className="h-10 my-1 rounded bg-indigo-200 ">
+            {" "}
+            Join a room to start chatting
+          </p>
         )}
       </div>
     </div>

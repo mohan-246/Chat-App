@@ -24,7 +24,7 @@ const Rooms = mongoose.model("Rooms", {
       content: String,
     },
   ],
-}, { versionKey: 'version' });
+});
 
 const User = mongoose.model("User", UserSchema);
 
@@ -73,6 +73,26 @@ async function leaveRooms(socket, userId) {
   }
 }
 
+async function saveRoomAndEmit(newRoom, users, UserMap, io) {
+  try {
+    await newRoom.save();
+
+    for (const userid of users) {
+      const u = await User.findOne({ id: userid });
+      if (!u.rooms.includes(newRoom._id)) {
+        u.rooms.push(newRoom._id);
+        await u.save();
+      }
+
+      const [socket] = UserMap.get(userid);
+      socket.join(newRoom.id);
+      socket.emit("checked-room", newRoom);
+    }
+  } catch (error) {
+    console.log("Error while saving and emitting room:", error);
+  }
+}
+
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
   const userName = socket.handshake.query.userName;
@@ -107,62 +127,36 @@ io.on("connection", (socket) => {
     socket.join(chatId);
   });
 
-  socket.on("check-room", async ({ users, name }) => {
-    const room = await Rooms.findOne({
-      members: {
-        $all: users,
-        $size: users.length,
-      },
-    });
-
-    if (room) {
-      if (!room.name) {
-        room.name = name;
-        await room.save();
-      }
-
-      const userRoomUpdatePromises = users.map(async (userid) => {
-        const u = await User.findOne({ id: userid });
-        if (!u.rooms.includes(room._id)) {
-          u.rooms.push(room._id);
-          await u.save();
-        }
+  socket.on("check-room", async ({ users, name, type }) => {
+    if (type == "private") {
+      const room = await Rooms.findOne({
+        members: {
+          $all: users,
+          $size: users.length,
+        },
       });
-
-      await Promise.all(userRoomUpdatePromises);
-
-      io.to(room.id).emit("checked-room", room);
+      if (room) {
+        socket.emit("private-room-exits");
+      } else {
+        const newRoom = new Rooms({
+          id: uuidv4(),
+          type: type,
+          members: users,
+          name: name,
+          messages: [],
+        });
+        saveRoomAndEmit(newRoom, users, UserMap);
+      }
     } else {
       const newRoom = new Rooms({
         id: uuidv4(),
-        type: `${users.length > 2 ? "private" : "group"}`,
+        type: type,
         members: users,
         name: name,
         messages: [],
       });
 
-      async function saveRoomAndEmit(newRoom, users, UserMap, io) {
-        try {
-          await newRoom.save();
-
-          users.forEach(async (userid) => {
-            const u = await User.findOne({ id: userid });
-            if (!u.rooms.includes(newRoom._id)) {
-              u.rooms.push(newRoom._id);
-              await u.save();
-            }
-
-            const [socket] = UserMap.get(userid);
-            socket.join(newRoom.id);
-          });
-
-          io.to(newRoom.id).emit("checked-room", newRoom);
-        } catch (error) {
-          console.log("Error while saving and emitting room:", error);
-        }
-      }
-
-      saveRoomAndEmit(newRoom, users, UserMap, io);
+      saveRoomAndEmit(newRoom, users, UserMap);
     }
   });
 
@@ -180,23 +174,29 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("leave-room", async ({ user, room }) => {
-    console.log(user, room);
-    const u = await User.findOne({ id: user });
-    const r = await Rooms.findOne({ id: room });
+    console.log(user , room)
+    const roomToLeave = await Rooms.findOne({ id: room });
+    // roomToLeave.members = roomToLeave.members.filter((user) => user.id != user);
+    // await roomToLeave.save();
 
-    r.members.remove(user);
-    u.rooms.remove(r._id);
-
-    try {
-      await r.save();
-    } catch (error) {
-      console.error("Error while saving room:", error);
-    }
-    await u.save();
+    User.updateOne({ id: userId }, { $pull: { rooms: roomToLeave._id } })
+      .then(() => {
+        console.log("Room removed successfully");
+      })
+      .catch((error) => {
+        console.error("Error removing room:", error);
+      });
+      Rooms.updateOne({ id: room }, { $pull: { members: user } })
+      .then(() => {
+        console.log("Room removed successfully");
+      })
+      .catch((error) => {
+        console.error("Error removing room:", error);
+      });
+   
     socket.leave(room);
-    io.to(room).emit("left-room", { user, room });
+    io.to(room).emit("left-room", { user, room  });
   });
-
   socket.on("reconnect", (attemptNumber) => {
     console.log(`Reconnected after attempt ${attemptNumber} id ${socket.id}`);
   });
@@ -239,18 +239,14 @@ app.get("/api/users", async (req, res) => {
 
 app.get("/api/rooms/:userId", async (req, res) => {
   const userId = req.params.userId;
-  // console.log(userId);
   try {
     const user = await User.findOne({ id: userId });
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-
-    const roomIds = user.rooms; // Assuming the user's rooms array contains room IDs
-
+    const roomIds = user.rooms;
     const rooms = await Rooms.find({ _id: { $in: roomIds } });
-
     res.json(rooms);
   } catch (error) {
     console.log("Error fetching rooms:", error);

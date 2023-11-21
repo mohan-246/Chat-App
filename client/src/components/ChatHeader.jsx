@@ -25,7 +25,7 @@ const ChatHeader = ({ memoizedRoom, handleInfoClick , leaveRoom }) => {
         </span>
       }  
       {memoizedRoom && (
-        memoizedRoom.members.length > 2 &&
+        memoizedRoom.type == "group" &&
         <div className="float-right flex gap-4">
           <button
             className=" font-bold px-2 text-gray-600 hover:text-white rounded"

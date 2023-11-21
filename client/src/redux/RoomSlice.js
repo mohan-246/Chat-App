@@ -44,16 +44,21 @@ const roomSlice = createSlice({
       }
     },
     removeUserFromRoom: (state, action) => {
-     
-      const roomIndex = state.rooms.findIndex(
-        (room) => room._id === action.payload.roomId
-      );
+      const { room, user } = action.payload;
+      const roomIndex = state.rooms.findIndex((r) => r.id == room);
 
       if (roomIndex !== -1) {
-        
-        state.rooms[roomIndex].members = state.rooms[roomIndex].members.filter(
-          (member) => member._id !== action.payload.userId
+        const updatedMembers = state.rooms[roomIndex].members.filter(
+          (member) => member.id !== user
         );
+        console.log(state.rooms[roomIndex].members, user, updatedMembers);
+        state.rooms = state.rooms.map((r, index) =>
+          index === roomIndex ? { ...r, members: updatedMembers } : r
+        );
+
+       
+      } else {
+        console.log("Room not found");
       }
     },
   },
