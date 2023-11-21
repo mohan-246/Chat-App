@@ -45,7 +45,7 @@ const ChatPage = () => {
           <MessageList socket={socket} />
         </div>
         <div className="col-span-2">
-          <ChatBox socket={socket} fetchData={fetchData}/>
+          <ChatBox socket={socket} />
         </div>
       </div>
     </div>

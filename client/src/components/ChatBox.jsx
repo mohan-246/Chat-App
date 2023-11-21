@@ -22,7 +22,12 @@ const ChatBox = ({ socket }) => {
     () => rooms.find((room) => room.id === curChat),
     [rooms, curChat]
   );
-
+  useEffect(() => {
+    // console.log('rooms changed', rooms)
+  },[rooms])
+  useEffect(() => {
+    // console.log("Memoized room changed",memoizedRoom);
+  }, [memoizedRoom]);
   useEffect(() => {
     scrollToBottom();
   }, [curChat, rooms, myRooms, users]);
@@ -36,9 +41,11 @@ const ChatBox = ({ socket }) => {
       socket.off("left-room", handleLeftRoom);
     };
   }, [socket]);
-  function handleLeftRoom({ user, room }) {
-    dispatch(removeUserFromRoom({user , room}))
-    setCurChat(curChat)
+  function handleLeftRoom({ user, room , members }) {
+    
+    dispatch(removeUserFromRoom({ user, room , members }));
+    console.log("handling left room",rooms)
+    setCurChat(curChat);
   }
 
   function handleSentMessage(message) {
@@ -97,13 +104,15 @@ const ChatBox = ({ socket }) => {
 
     if (foundRoom) {
       socket.emit("leave-room", { user: user.id, room: curChat });
-      sendIoMessage(`${user.fullName} has left the chat`)
+      sendIoMessage(`${user.fullName} has left the chat`);
       dispatch(leaveRoom({ roomid: curChat }));
-      dispatch(setCurChat(null))
-      
-    } else {
+      dispatch(setCurChat(null));
+    } else { 
       console.error(`Room with ID ${curChat} not found.`);
     }
+  }
+  function handleAddMembers(){
+    window.alert("adding members...");
   }
   return (
     <div className="h-screen flex flex-col">
@@ -111,6 +120,7 @@ const ChatBox = ({ socket }) => {
         handleInfoClick={handleInfoClick}
         memoizedRoom={memoizedRoom}
         leaveRoom={handleLeaveRoom}
+        addMembers={handleAddMembers}
       />
       <div className="bg-indigo-50 flex-1 overflow-y-auto" id="chatbox">
         {showMembers && (

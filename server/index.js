@@ -136,7 +136,7 @@ io.on("connection", (socket) => {
         },
       });
       if (room) {
-        socket.emit("private-room-exits");
+        socket.emit("private-room-exists");
       } else {
         const newRoom = new Rooms({
           id: uuidv4(),
@@ -174,10 +174,16 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("leave-room", async ({ user, room }) => {
-    console.log(user , room)
+    console.log(user, room);
+    Rooms.updateOne({ id: room }, { $pull: { members: user } })
+      .then(() => {
+        console.log("Room removed successfully");
+      })
+      .catch((error) => {
+        console.error("Error removing room:", error);
+      });
+
     const roomToLeave = await Rooms.findOne({ id: room });
-    // roomToLeave.members = roomToLeave.members.filter((user) => user.id != user);
-    // await roomToLeave.save();
 
     User.updateOne({ id: userId }, { $pull: { rooms: roomToLeave._id } })
       .then(() => {
@@ -186,16 +192,9 @@ io.on("connection", (socket) => {
       .catch((error) => {
         console.error("Error removing room:", error);
       });
-      Rooms.updateOne({ id: room }, { $pull: { members: user } })
-      .then(() => {
-        console.log("Room removed successfully");
-      })
-      .catch((error) => {
-        console.error("Error removing room:", error);
-      });
-   
+
     socket.leave(room);
-    io.to(room).emit("left-room", { user, room  });
+    io.to(room).emit("left-room", { user, room , members: roomToLeave.members});
   });
   socket.on("reconnect", (attemptNumber) => {
     console.log(`Reconnected after attempt ${attemptNumber} id ${socket.id}`);
@@ -218,12 +217,14 @@ app.get("/api/user/:userId", async (req, res) => {
   const userrooms = [];
   for (const roomid of user.rooms) {
     const room = await Rooms.findOne({ _id: roomid });
-    userrooms.push({
-      id: room.id,
-      name: room.name,
-      members: room.members,
-      type: room.type,
-    });
+    if (room) {
+      userrooms.push({
+        id: room.id,
+        name: room.name,
+        members: room.members,
+        type: room.type,
+      });
+    }
   }
 
   return res.json({ userr: user, userrooms: userrooms });

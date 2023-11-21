@@ -36,7 +36,7 @@ const MessageList = ({ socket }) => {
       })
     );
   };
-  
+
   useEffect(() => {
     const usersFound = users.filter(
       (foundUser) =>
@@ -53,10 +53,16 @@ const MessageList = ({ socket }) => {
 
   useEffect(() => {
     socket.on("checked-room", handleCheckedRoom);
-    socket.on("private-room-exits", () => window.alert("private chat with user already exists"))
+    socket.on("private-room-exists", () => {
+      console.log("handling-private-room-exists");
+      window.alert("private chat with user already exists");
+    });
     return () => {
       socket.off("checked-room", handleCheckedRoom);
-      socket.off("private-room-exits",  () => window.alert("private chat with user already exists"))
+      socket.off("private-room-exits", () => () => {
+        console.log("handling-private-room-exists");
+        window.alert("private chat with user already exists");
+      });
     };
   }, [socket]);
 
@@ -76,7 +82,7 @@ const MessageList = ({ socket }) => {
         type: "group",
       });
 
-      window.alert(groupInput);
+      // window.alert(groupInput);
     } else {
       socket.emit("check-room", { users: selectedUsers, type: "private" });
     }
@@ -85,6 +91,7 @@ const MessageList = ({ socket }) => {
     setNamed(false);
     setSearching(false);
     setSelectedUsers([user.id]);
+    setSearchUser("");
     setCheckboxes({});
   }
 
@@ -92,11 +99,9 @@ const MessageList = ({ socket }) => {
     setSelecting(true);
     if (selectedUsers.includes(userid)) {
       setSelectedUsers((prevUsers) => prevUsers.filter((id) => id !== userid));
-      // Uncheck the checkbox
       setCheckboxes({ ...checkboxes, [userid]: false });
     } else {
       setSelectedUsers((prevUsers) => [...prevUsers, userid]);
-      // Check the checkbox
       setCheckboxes({ ...checkboxes, [userid]: true });
     }
   }
