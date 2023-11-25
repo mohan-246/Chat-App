@@ -38,16 +38,16 @@ const ChatHeader = ({
             i
           </button>
           <button
-            className=" font-bold px-2 text-gray-600 hover:text-red-500 rounded"
-            onClick={leaveRoom}
-          >
-            -{">"}
-          </button>
-          <button
-            className=" font-bold px-2 text-gray-600 hover:text-green-500 rounded"
+            className="text-md font-bold px-2 text-gray-600 hover:text-green-500 rounded"
             onClick={addMembers}
           >
             {"+"}
+          </button>
+          <button
+            className=" font-bold px-2 text-gray-600 hover:text-red-500 rounded"
+            onClick={leaveRoom}
+          >
+            {"->"}
           </button>
         </div>
       )}

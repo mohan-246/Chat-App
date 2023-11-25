@@ -61,7 +61,7 @@ const roomSlice = createSlice({
       if (roomIndex !== -1) {
         state.rooms[roomIndex] = foundRoom
       } else {
-        console.log("Room not found");
+        state.rooms.push(foundRoom)
       }
     }
   },

@@ -45,7 +45,7 @@ const MessageList = ({ socket }) => {
   function CheckAndCreateRoom() {
     if (selectedUsers.length > 2) {
       let groupInput = window.prompt("Enter Group Name");
-      if (groupInput && groupInput.trim() == "") {
+      if (!groupInput || groupInput.trim() === "" || groupInput.length == 0) {
         window.alert("Please enter a valid group name");
         return;
       }

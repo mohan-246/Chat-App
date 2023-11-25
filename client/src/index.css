@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+#show-members-panel{
+    z-index: 1;
+}
+#add-members-panel{
+    z-index: 1;
+}
