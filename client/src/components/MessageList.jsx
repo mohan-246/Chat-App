@@ -1,8 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { joinRoom, setCurChat } from "../redux/UserSlice";
-import { UserProfile, useUser } from "@clerk/clerk-react";
-import useSocket from "../socket/useSocket";
+import { useUser } from "@clerk/clerk-react";
 import { addRoom, setRoom } from "../redux/RoomSlice";
 import SearchInput from "./SearchInput";
 
@@ -13,30 +14,10 @@ const MessageList = ({ socket }) => {
   const [searching, setSearching] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([user.id]);
-  const [confirming, setConfirming] = useState(false);
-  const [named, setNamed] = useState(false);
-  const [groupName, setGroupName] = useState("");
   const [checkboxes, setCheckboxes] = useState({}); // State to manage checkbox statuses
-
-  //const socket = useSelector((state) => state.socket.socket)
   const users = useSelector((state) => state.Users.users);
   const myRooms = useSelector((state) => state.User.myrooms);
-  const rooms = useSelector((state) => state.Room.rooms);
   const dispatch = useDispatch();
-
-  const handleCheckedRoom = (room) => {
-    dispatch(addRoom(room));
-    socket.emit("join-chat", room.id);
-    // console.log("handling checked room");
-    dispatch(
-      joinRoom({
-        id: room.id,
-        type: room.type,
-        name: room.name,
-        members: room.members,
-      })
-    );
-  };
 
   useEffect(() => {
     const usersFound = users.filter(
@@ -51,24 +32,20 @@ const MessageList = ({ socket }) => {
       setSearching(false);
     }
   }, [searchUser]);
-
   useEffect(() => {
     socket.on("checked-room", handleCheckedRoom);
     socket.on("private-room-exists", handlePrivateRoomExists);
-    socket.on('added-members' , handleAddedMembers);
+    socket.on("added-members", handleAddedMembers);
     return () => {
       socket.off("checked-room", handleCheckedRoom);
       socket.off("private-room-exits", handlePrivateRoomExists);
-      socket.off('added-members' , handleAddedMembers);
+      socket.off("added-members", handleAddedMembers);
     };
   }, [socket]);
-
   function CheckAndCreateRoom() {
     if (selectedUsers.length > 2) {
       let groupInput = window.prompt("Enter Group Name");
-      if (groupInput && groupInput.trim() !== "") {
-        setNamed(true);
-      } else {
+      if (groupInput && groupInput.trim() == "") {
         window.alert("Please enter a valid group name");
         return;
       }
@@ -78,20 +55,16 @@ const MessageList = ({ socket }) => {
         name: groupInput,
         type: "group",
       });
-
-      // window.alert(groupInput);
     } else {
       socket.emit("check-room", { users: selectedUsers, type: "private" });
     }
 
     setSelecting(false);
-    setNamed(false);
     setSearching(false);
     setSelectedUsers([user.id]);
     setSearchUser("");
     setCheckboxes({});
   }
-
   function AddUserToRoom(userid) {
     setSelecting(true);
     if (selectedUsers.includes(userid)) {
@@ -105,9 +78,20 @@ const MessageList = ({ socket }) => {
   function handlePrivateRoomExists() {
     window.alert("private chat with user already exists");
   }
-  function handleAddedMembers({ users, room,  foundRoom }){
-    console.log("added members")
-    if (users.includes(user.id)){
+  const handleCheckedRoom = (room) => {
+    dispatch(addRoom(room));
+    socket.emit("join-chat", room.id);
+    dispatch(
+      joinRoom({
+        id: room.id,
+        type: room.type,
+        name: room.name,
+        members: room.members,
+      })
+    );
+  };
+  function handleAddedMembers({ users, foundRoom }) {
+    if (users.includes(user.id)) {
       dispatch(
         joinRoom({
           id: foundRoom.id,
@@ -117,7 +101,7 @@ const MessageList = ({ socket }) => {
         })
       );
     }
-    dispatch(setRoom(foundRoom))
+    dispatch(setRoom(foundRoom));
   }
   return (
     <div className="h-screen bg-indigo-100">

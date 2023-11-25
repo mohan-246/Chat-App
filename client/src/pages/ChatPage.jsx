@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import MessageList from "../components/MessageList";
 import ChatBox from "../components/ChatBox";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { setName, setId, setMyRooms } from "../redux/UserSlice";
 import { useUser } from "@clerk/clerk-react";
 import useSocket from "../socket/useSocket";
@@ -17,6 +17,7 @@ const ChatPage = () => {
   const dispatch = useDispatch();
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   async function fetchData() {
     const me = await checkUser(user.id);
@@ -28,7 +29,6 @@ const ChatPage = () => {
     if (!me) {
       socket.emit("new-user");
     } else {
-      // console.log(me.rooms)
       dispatch(setMyRooms(me.userrooms));
     }
     if (users) {

@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/prop-types */
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addMessageToRoom, removeUserFromRoom } from "../redux/RoomSlice";
-import { removeUserRoom } from "../redux/UsersSlice";
 import { leaveRoom, setCurChat } from "../redux/UserSlice";
 import { useUser } from "@clerk/clerk-react";
 import ChatHeader from "./ChatHeader";
@@ -24,20 +25,10 @@ const ChatBox = ({ socket }) => {
   const [message, setMessage] = useState("");
   const FinalRef = useRef();
   const myRooms = useSelector((state) => state.User.myrooms);
-
   const memoizedRoom = useMemo(
     () => rooms.find((room) => room.id === curChat),
     [rooms, curChat]
   );
-  useEffect(() => {
-    // console.log('rooms changed', rooms)
-  }, [rooms]);
-  useEffect(() => {
-    // console.log("Memoized room changed",memoizedRoom);
-  }, [memoizedRoom]);
-  useEffect(() => {
-    scrollToBottom();
-  }, [curChat, rooms, myRooms, users]);
   useEffect(() => {
     socket.on("sent-message", handleSentMessage);
     socket.on("left-room", handleLeftRoom);
@@ -47,6 +38,9 @@ const ChatBox = ({ socket }) => {
       socket.off("left-room", handleLeftRoom);
     };
   }, [socket]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [curChat, rooms, myRooms, users]);
   useEffect(() => {
     const usersFound = users.filter(
       (foundUser) =>
@@ -80,7 +74,6 @@ const ChatBox = ({ socket }) => {
 
   function handleLeftRoom({ user, room, members }) {
     dispatch(removeUserFromRoom({ user, room, members }));
-    // console.log("handling left room",rooms)
     setCurChat(curChat);
   }
   function handleSentMessage(message) {
@@ -145,8 +138,6 @@ const ChatBox = ({ socket }) => {
     setAddingMembers((prevAddingMembers) => !prevAddingMembers);
   }
   function AddMembersToRoom() {
-    
-    
     const selectedUserNames = users.filter(user => selectedUsers.includes(user.id)).map(user => user.name)
     sendIoMessage(`${user.fullName} added ${selectedUserNames}`)
     socket.emit("add-members", {users : selectedUsers,room : curChat})

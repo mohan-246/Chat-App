@@ -44,7 +44,7 @@ const roomSlice = createSlice({
       }
     },
     removeUserFromRoom: (state, action) => {
-      const { room, user } = action.payload;
+      const { room } = action.payload;
       const roomIndex = state.rooms.findIndex((r) => r.id == room);
 
       if (roomIndex !== -1) {

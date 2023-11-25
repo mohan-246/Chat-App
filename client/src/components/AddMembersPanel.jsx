@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+/* eslint-disable react/prop-types */
 import SearchInput from "./SearchInput";
 
 const AddMembersPanel = ({

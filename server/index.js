@@ -169,16 +169,13 @@ io.on("connection", (socket) => {
       room.messages.push(message);
       await room.save();
       io.to(room.id).emit("sent-message", message);
-    } catch (error) { 
+    } catch (error) {
       console.log("Error sending message:", error);
     }
   });
   socket.on("leave-room", async ({ user, room }) => {
-    // console.log(user, room);
     Rooms.updateOne({ id: room }, { $pull: { members: user } })
-      .then(() => {
-       
-      })
+      .then(() => {})
       .catch((error) => {
         console.error("Error removing room:", error);
       });
@@ -186,30 +183,31 @@ io.on("connection", (socket) => {
     const roomToLeave = await Rooms.findOne({ id: room });
 
     User.updateOne({ id: userId }, { $pull: { rooms: roomToLeave._id } })
-      .then(() => {
-      
-      })
+      .then(() => {})
       .catch((error) => {
         console.error("Error removing room:", error);
       });
 
     socket.leave(room);
-    io.to(room).emit("left-room", { user, room , members: roomToLeave.members});
+    io.to(room).emit("left-room", { user, room, members: roomToLeave.members });
   });
   socket.on("add-members", async ({ users, room }) => {
-    await Rooms.updateOne({ id: room }, { $push: { members: { $each: users } } });
+    await Rooms.updateOne(
+      { id: room },
+      { $push: { members: { $each: users } } }
+    );
     const foundRoom = await Rooms.findOne({ id: room });
     for (const userId of users) {
       await User.updateOne({ id: userId }, { $push: { rooms: foundRoom._id } });
     }
-    for (const userid of users){
+    for (const userid of users) {
       const [socket] = UserMap.get(userid);
-      socket.join(room);     
+      socket.join(room);
     }
-    
-    io.to(room).emit("added-members", { users, room , foundRoom });
+
+    io.to(room).emit("added-members", { users, foundRoom });
   });
-  
+
   socket.on("reconnect", (attemptNumber) => {
     console.log(`Reconnected after attempt ${attemptNumber} id ${socket.id}`);
   });
