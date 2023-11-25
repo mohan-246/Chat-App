@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { joinRoom, setCurChat } from "../redux/UserSlice";
 import { UserProfile, useUser } from "@clerk/clerk-react";
 import useSocket from "../socket/useSocket";
-import { addRoom } from "../redux/RoomSlice";
+import { addRoom, setRoom } from "../redux/RoomSlice";
+import SearchInput from "./SearchInput";
 
 const MessageList = ({ socket }) => {
   const { user } = useUser();
@@ -26,7 +27,7 @@ const MessageList = ({ socket }) => {
   const handleCheckedRoom = (room) => {
     dispatch(addRoom(room));
     socket.emit("join-chat", room.id);
-    console.log("handling checked room");
+    // console.log("handling checked room");
     dispatch(
       joinRoom({
         id: room.id,
@@ -53,16 +54,12 @@ const MessageList = ({ socket }) => {
 
   useEffect(() => {
     socket.on("checked-room", handleCheckedRoom);
-    socket.on("private-room-exists", () => {
-      console.log("handling-private-room-exists");
-      window.alert("private chat with user already exists");
-    });
+    socket.on("private-room-exists", handlePrivateRoomExists);
+    socket.on('added-members' , handleAddedMembers);
     return () => {
       socket.off("checked-room", handleCheckedRoom);
-      socket.off("private-room-exits", () => () => {
-        console.log("handling-private-room-exists");
-        window.alert("private chat with user already exists");
-      });
+      socket.off("private-room-exits", handlePrivateRoomExists);
+      socket.off('added-members' , handleAddedMembers);
     };
   }, [socket]);
 
@@ -105,34 +102,38 @@ const MessageList = ({ socket }) => {
       setCheckboxes({ ...checkboxes, [userid]: true });
     }
   }
-
+  function handlePrivateRoomExists() {
+    window.alert("private chat with user already exists");
+  }
+  function handleAddedMembers({ users, room,  foundRoom }){
+    console.log("added members")
+    if (users.includes(user.id)){
+      dispatch(
+        joinRoom({
+          id: foundRoom.id,
+          type: foundRoom.type,
+          name: foundRoom.name,
+          members: foundRoom.members,
+        })
+      );
+    }
+    dispatch(setRoom(foundRoom))
+  }
   return (
     <div className="h-screen bg-indigo-100">
-      <div className="flex">
-        <input
-          type="text"
-          placeholder="Start new chat"
-          className={`my-2 px-2 rounded mx-2 ${
-            selecting ? "w-[80%] " : "w-full "
-          }`}
-          value={searchUser}
-          onChange={(e) => setSearchUser(e.target.value)}
-        ></input>
-        {selecting && (
-          <button
-            className="w-[20%] mx-1 bg-white my-2 rounded"
-            onClick={() => CheckAndCreateRoom()}
-          >
-            Add
-          </button>
-        )}
-      </div>
+      <SearchInput
+        selecting={selecting}
+        searchUser={searchUser}
+        setSearchUser={setSearchUser}
+        onClickFunction={CheckAndCreateRoom}
+        placeHolder={"Start new chat"}
+      />
 
       <p className="bg-indigo-300 px-2">
         {searching ? "Search Results" : "Chats"}
       </p>
 
-      <div>
+      <div className="overflow-auto">
         {searching ? (
           foundUsers && foundUsers.length > 0 ? (
             foundUsers.map((user, index) => (

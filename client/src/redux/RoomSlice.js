@@ -48,23 +48,26 @@ const roomSlice = createSlice({
       const roomIndex = state.rooms.findIndex((r) => r.id == room);
 
       if (roomIndex !== -1) {
-        // const updatedMembers = state.rooms[roomIndex].members.filter(
-        //   (member) => member.id !== user
-        // );
-
         state.rooms = state.rooms.map((r, index) =>
           index === roomIndex ? { ...r, members: action.payload.members } : r
         );
-
-        console.log(state.rooms, user, action.payload.members);
       } else {
         console.log("Room not found");
       }
     },
+    setRoom: (state , action)=>{
+      const foundRoom  = action.payload;
+      const roomIndex = state.rooms.findIndex((r) => r.id == foundRoom.id);
+      if (roomIndex !== -1) {
+        state.rooms[roomIndex] = foundRoom
+      } else {
+        console.log("Room not found");
+      }
+    }
   },
 });
 
-export const { setRooms, addRoom, addMessageToRoom, removeUserFromRoom } =
+export const { setRooms, addRoom, addMessageToRoom, removeUserFromRoom, setRoom } =
   roomSlice.actions;
 
 export default roomSlice.reducer;

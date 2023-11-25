@@ -6,6 +6,7 @@ import { leaveRoom, setCurChat } from "../redux/UserSlice";
 import { useUser } from "@clerk/clerk-react";
 import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
+import AddMembersPanel from "./AddMembersPanel";
 
 const ChatBox = ({ socket }) => {
   const dispatch = useDispatch();
@@ -13,7 +14,13 @@ const ChatBox = ({ socket }) => {
   const curChat = useSelector((state) => state.User.curChat);
   const rooms = useSelector((state) => state.Room.rooms);
   const users = useSelector((state) => state.Users.users);
+  const [searchUser, setSearchUser] = useState("");
+  const [foundUsers, setFoundUsers] = useState([]);
+  const [selecting, setSelecting] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [checkboxes, setCheckboxes] = useState({}); 
+  const [addingMembers, setAddingMembers] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const [message, setMessage] = useState("");
   const FinalRef = useRef();
   const myRooms = useSelector((state) => state.User.myrooms);
@@ -24,14 +31,13 @@ const ChatBox = ({ socket }) => {
   );
   useEffect(() => {
     // console.log('rooms changed', rooms)
-  },[rooms])
+  }, [rooms]);
   useEffect(() => {
     // console.log("Memoized room changed",memoizedRoom);
   }, [memoizedRoom]);
   useEffect(() => {
     scrollToBottom();
   }, [curChat, rooms, myRooms, users]);
-
   useEffect(() => {
     socket.on("sent-message", handleSentMessage);
     socket.on("left-room", handleLeftRoom);
@@ -41,18 +47,46 @@ const ChatBox = ({ socket }) => {
       socket.off("left-room", handleLeftRoom);
     };
   }, [socket]);
-  function handleLeftRoom({ user, room , members }) {
+  useEffect(() => {
+    const usersFound = users.filter(
+      (foundUser) =>
+        foundUser.name.toLowerCase().includes(searchUser.toLowerCase()) &&
+        foundUser.id != user.id
+    );
+    setFoundUsers(usersFound);
+  }, [searchUser]);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      
+      
     
-    dispatch(removeUserFromRoom({ user, room , members }));
-    console.log("handling left room",rooms)
+      if (showMembers && event.target.id == "show-members-panel") {
+       
+        handleInfoClick();
+      } 
+      if (addingMembers && event.target.id == "add-members-panel" ) {
+        
+        handleAddMembers();
+      }
+    };
+    
+
+    window.addEventListener("click", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("click", handleClickOutside);
+    };
+  }, [showMembers,addingMembers]);
+
+  function handleLeftRoom({ user, room, members }) {
+    dispatch(removeUserFromRoom({ user, room, members }));
+    // console.log("handling left room",rooms)
     setCurChat(curChat);
   }
-
   function handleSentMessage(message) {
     dispatch(addMessageToRoom(message));
     scrollToBottom();
   }
-
   function sendMessage() {
     if (message.trim() === "") {
       return;
@@ -93,26 +127,34 @@ const ChatBox = ({ socket }) => {
     }
   }
   function handleInfoClick() {
-    setShowMembers(true);
-  }
-
-  function handleCloseMembers() {
-    setShowMembers(false);
+    setShowMembers((prev) => !prev);
   }
   function handleLeaveRoom() {
     const foundRoom = rooms.find((r) => r.id === curChat);
 
     if (foundRoom) {
       socket.emit("leave-room", { user: user.id, room: curChat });
-      sendIoMessage(`${user.fullName} has left the chat`);
+      sendIoMessage(`${user.fullName} left`);
       dispatch(leaveRoom({ roomid: curChat }));
       dispatch(setCurChat(null));
-    } else { 
+    } else {
       console.error(`Room with ID ${curChat} not found.`);
     }
   }
-  function handleAddMembers(){
-    window.alert("adding members...");
+  function handleAddMembers() {
+    setAddingMembers((prevAddingMembers) => !prevAddingMembers);
+  }
+  function AddMembersToRoom() {
+    
+    
+    const selectedUserNames = users.filter(user => selectedUsers.includes(user.id)).map(user => user.name)
+    sendIoMessage(`${user.fullName} added ${selectedUserNames}`)
+    socket.emit("add-members", {users : selectedUsers,room : curChat})
+    setSelecting(false);
+    setSelectedUsers([]);
+    setSearchUser("");
+    setCheckboxes({});
+    setAddingMembers(false)
   }
   return (
     <div className="h-screen flex flex-col">
@@ -124,8 +166,8 @@ const ChatBox = ({ socket }) => {
       />
       <div className="bg-indigo-50 flex-1 overflow-y-auto" id="chatbox">
         {showMembers && (
-          <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-indigo-50 p-4 rounded">
+          <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50" id="show-members-panel">
+            <div className="bg-indigo-50 p-4 rounded max-h-1/2 overflow-auto max-w-1/4" >
               <h2 className="text-lg font-bold mb-2">Room Members</h2>
               <ul>
                 {memoizedRoom.members.map((memberId) => {
@@ -137,12 +179,6 @@ const ChatBox = ({ socket }) => {
                   );
                 })}
               </ul>
-              <button
-                className="bg-indigo-300 py-2 px-4 rounded mt-4"
-                onClick={handleCloseMembers}
-              >
-                Close
-              </button>
             </div>
           </div>
         )}
@@ -153,12 +189,12 @@ const ChatBox = ({ socket }) => {
               <div
                 key={message.time}
                 className={`flex mb-2 mx-1 ${
-                  message.from === user.id ? "justify-end" : "justify-start"
+                 message.from == 'io' ? "justify-center" : message.from === user.id ? "justify-end" : "justify-start"
                 }`}
               >
                 <div
                   className={`rounded-lg inline-block m-1 p-2 max-w-[80%] ${
-                    message.from === user.id ? "bg-indigo-200" : "bg-indigo-100"
+                    message.from == 'io' ? "bg-slate-50" : message.from === user.id ? "bg-indigo-200" : "bg-indigo-100"
                   }`}
                 >
                   <p className="text-[10px] opacity-80 capitalize">
@@ -167,7 +203,7 @@ const ChatBox = ({ socket }) => {
                         (u) =>
                           u.id === message.from &&
                           u.id != user.id &&
-                          memoizedRoom.members.length > 2
+                          memoizedRoom.type == 'group'
                       )
                       .map((u) => (
                         <span key={u.id}>{u.name}</span>
@@ -181,6 +217,21 @@ const ChatBox = ({ socket }) => {
 
         <p ref={FinalRef}></p>
       </div>
+      {memoizedRoom && addingMembers && (
+        <AddMembersPanel
+          searchUser={searchUser}
+          setSearchUser={setSearchUser}
+          selecting={selecting}
+          setSelecting={setSelecting}
+          foundUsers={foundUsers}
+          selectedUsers={selectedUsers}
+          setSelectedUsers={setSelectedUsers}
+          AddMembersToRoom={AddMembersToRoom}
+          checkboxes={checkboxes}
+          setCheckboxes={setCheckboxes}
+          memoizedRoom={memoizedRoom}
+        />
+      )}
 
       <ChatInput
         sendMessage={sendMessage}
