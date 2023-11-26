@@ -7,7 +7,9 @@ import { v4 as uuidv4 } from "uuid";
 
 const UserSchema = new mongoose.Schema({
   name: String,
+  userName: String,
   id: String,
+  image: String,
   rooms: [{ type: mongoose.Schema.Types.ObjectId, ref: "Rooms" }],
 });
 
@@ -96,13 +98,17 @@ async function saveRoomAndEmit(newRoom, users, UserMap, io) {
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
   const userName = socket.handshake.query.userName;
+  const name = socket.handshake.query.name;
+  const image = socket.handshake.query.image;
   UserMap.set(userId, [socket, userName, socket.id]);
   joinRooms(socket, userId);
 
   socket.on("new-user", async () => {
     const newUser = new User({
-      name: userName,
+      userName: userName,
+      name: name,
       id: userId,
+      image: image,
       rooms: [],
     });
 

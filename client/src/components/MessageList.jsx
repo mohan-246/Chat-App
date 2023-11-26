@@ -17,12 +17,13 @@ const MessageList = ({ socket }) => {
   const [checkboxes, setCheckboxes] = useState({}); // State to manage checkbox statuses
   const users = useSelector((state) => state.Users.users);
   const myRooms = useSelector((state) => state.User.myrooms);
+  const curChat = useSelector((state) => state.User.curChat);
   const dispatch = useDispatch();
 
   useEffect(() => {
     const usersFound = users.filter(
       (foundUser) =>
-        foundUser.name.toLowerCase().includes(searchUser.toLowerCase()) &&
+        foundUser.userName.toLowerCase().includes(searchUser.toLowerCase()) &&
         foundUser.id != user.id
     );
     setFoundUsers(usersFound);
@@ -104,7 +105,8 @@ const MessageList = ({ socket }) => {
     dispatch(setRoom(foundRoom));
   }
   return (
-    <div className="h-screen bg-indigo-100">
+    <div className="h-screen bg-[#0B141A] flex flex-col text-[#E8ECEE]">
+    <div className="bg-[#202C33]">
       <SearchInput
         selecting={selecting}
         searchUser={searchUser}
@@ -112,53 +114,84 @@ const MessageList = ({ socket }) => {
         onClickFunction={CheckAndCreateRoom}
         placeHolder={"Start new chat"}
       />
-
-      <p className="bg-indigo-300 px-2">
-        {searching ? "Search Results" : "Chats"}
-      </p>
-
+  </div>
       <div className="overflow-auto">
         {searching ? (
           foundUsers && foundUsers.length > 0 ? (
             foundUsers.map((user, index) => (
-              <p className="h-10 my-1  bg-indigo-200" key={index}>
-                {user.name}
-                <label className="float-right">
+              <div
+                className="h-auto my-1 p-1 bg-[#111B21] relative flex items-center"
+                key={index}
+              >
+                <img
+                  src={user.image}
+                  className="h-8 w-8 rounded-full"
+                  alt={`Profile of ${user.userName}`}
+                />
+                <div className="ml-2 flex-grow">
+                  <span className="font-semibold block">{user.userName}</span>
+                  <span className="block">{`(${user.name})`}</span>
+                </div>
+                <label className="absolute top-1 right-1">
                   <input
                     type="checkbox"
-                    className="mr-2"
-                    checked={checkboxes[user.id]} // Use the state to determine checkbox status
+                    className="h-4 w-4 border-gray-400 rounded-full mr-1"
                     onChange={() => AddUserToRoom(user.id)}
                   />
                 </label>
-              </p>
+              </div>
             ))
           ) : (
-            <p className="h-10 my-1  bg-indigo-200 "> User Not found</p>
+            <p className="h-10 my-1  bg-[#111B21] "> User Not found</p>
           )
         ) : myRooms && myRooms.length > 0 ? (
           myRooms.map((room, index) => (
-            <p
-              className="h-[35px] py-1 px-2 border bg-indigo-200 "
+            <div
               key={index}
+              className={`flex items-center gap-2  ${room.id == curChat ? "bg-[#2A3942]" : "bg-[#202C33]"}`}
               onClick={() => dispatch(setCurChat(room.id))}
             >
-              {room.name
-                ? room.name
-                : room.members
-                    ?.filter((memberId) => memberId !== user.id)
+              <div>
+                {room.name ? (
+                  <img
+                    src="https://cdn.pixabay.com/photo/2020/05/29/13/26/icons-5235125_1280.png"
+                    className="h-8 w-8 rounded-full m-[4px]"
+                  />
+                ) : (
+                  room.members
+                    .filter((memberId) => memberId !== user.id)
                     .map((memberId) => {
-                      const member = users.find((user) => user.id === memberId);
+                      const member = users.find((u) => u.id === memberId);
                       return (
-                        <span key={memberId}>
-                          {member ? member.name : "Unknown User"}
-                        </span>
+                        <img
+                          key={memberId}
+                          src={member.image}
+                          className="h-8 w-8 rounded-full m-[4px]"
+                        />
                       );
-                    })}
-            </p>
+                    })
+                )}
+              </div>
+              <p className="h-[60px] flex items-center " key={index}>
+                {room.name
+                  ? room.name
+                  : room.members
+                      ?.filter((memberId) => memberId !== user.id)
+                      .map((memberId) => {
+                        const member = users.find(
+                          (user) => user.id === memberId
+                        );
+                        return (
+                          <span key={memberId}>
+                            {member ? member.name : "Unknown User"}
+                          </span>
+                        );
+                      })}
+              </p>
+            </div>
           ))
         ) : (
-          <p className="h-10 my-1 rounded bg-indigo-200 ">
+          <p className="h-[60px] my-1 rounded bg-[#033933] ">
             {" "}
             Join a room to start chatting
           </p>

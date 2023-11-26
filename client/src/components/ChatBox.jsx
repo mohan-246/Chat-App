@@ -44,7 +44,7 @@ const ChatBox = ({ socket }) => {
   useEffect(() => {
     const usersFound = users.filter(
       (foundUser) =>
-        foundUser.name.toLowerCase().includes(searchUser.toLowerCase()) &&
+        foundUser.userName.toLowerCase().includes(searchUser.toLowerCase()) &&
         foundUser.id != user.id
     );
     setFoundUsers(usersFound);
@@ -121,7 +121,7 @@ const ChatBox = ({ socket }) => {
 
     if (foundRoom) {
       socket.emit("leave-room", { user: user.id, room: curChat });
-      sendIoMessage(`${user.firstName} left`);
+      sendIoMessage(`${user.fullName} left`);
       dispatch(leaveRoom({ roomid: curChat }));
       dispatch(setCurChat(null));
     } else {
@@ -135,7 +135,7 @@ const ChatBox = ({ socket }) => {
     const selectedUserNames = users
       .filter((user) => selectedUsers.includes(user.id))
       .map((user) => user.name);
-    sendIoMessage(`${user.firstName} added ${selectedUserNames}`);
+    sendIoMessage(`${user.fullName} added ${selectedUserNames}`);
     socket.emit("add-members", { users: selectedUsers, room: curChat });
     setSelecting(false);
     setSelectedUsers([]);
@@ -153,13 +153,13 @@ const ChatBox = ({ socket }) => {
             leaveRoom={handleLeaveRoom}
             addMembers={handleAddMembers}
           />
-          <div className="bg-indigo-50 flex-1 overflow-y-auto" id="chatbox">
+          <div className="bg-[#0B141A] flex-1 overflow-y-auto" id="chatbox">
             {showMembers && (
               <div
                 className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50"
                 id="show-members-panel"
               >
-                <div className="bg-indigo-50 p-4 rounded max-h-1/2 overflow-auto max-w-1/4">
+                <div className="bg-[#0B141A] p-4 rounded max-h-1/2 overflow-auto max-w-1/4">
                   <h2 className="text-lg font-bold mb-2">Room Members</h2>
                   <ul>
                     {memoizedRoom.members.map((memberId) => {
@@ -187,17 +187,26 @@ const ChatBox = ({ socket }) => {
                         ? "justify-end"
                         : "justify-start"
                     }`}
-                  >
+                  > {users
+                          .filter(
+                            (u) =>
+                              u.id === message.from &&
+                              u.id != user.id 
+                          )
+                          .map((u) => (
+                            <img key={u.id} src={u.image} className="h-8 w-8 rounded-full m-[1px] mt-2"></img>
+                          ))}
                     <div
                       className={`rounded-lg inline-block m-1 p-2 max-w-[80%] ${
                         message.from == "io"
-                          ? "bg-slate-50"
+                          ? "bg-[#182229] text-[#7C8C95]"
                           : message.from === user.id
-                          ? "bg-indigo-200"
-                          : "bg-indigo-100"
+                          ? "bg-[#005C4B] "
+                          : "bg-[#202C33] "
                       }`}
                     >
-                      <p className="text-[10px] opacity-80 capitalize">
+                     
+                     <p className="text-[10px] opacity-80 text-[#A5B337] capitalize">
                         {users
                           .filter(
                             (u) =>
@@ -206,10 +215,11 @@ const ChatBox = ({ socket }) => {
                               memoizedRoom.type == "group"
                           )
                           .map((u) => (
-                            <span key={u.id}>{u.name}</span>
+                            <span key={u.id}>{u.name} </span>
                           ))}
                       </p>
-                      <p>{message.content}</p>
+                      <p className="text-[#E4E8EB]">{message.content}</p>
+                    
                     </div>
                   </div>
                 ))}
@@ -242,7 +252,7 @@ const ChatBox = ({ socket }) => {
           )}
         </div>
       ) : (
-        <div className="bg-indigo-50 w-full h-full flex items-center justify-center text-center">
+        <div className="bg-[#0B141A] w-full h-full flex items-center justify-center text-center">
           <p className="text-xl max-w-[50%] font-mono font-semibold uppercase">Join a room or select a room to start chatting</p>
         </div>
       )}
