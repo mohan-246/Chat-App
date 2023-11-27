@@ -5,22 +5,36 @@ const SearchInput = ({
   setSearchUser,
   onClickFunction,
   placeHolder,
+  searching,
+  searchOnClick,
 }) => {
-  
   return (
-    <div className="flex h-[50px]">
+    <div className="flex h-[50px] m-1">
+      <div
+        className="bg-cover bg-center h-[22px] w-[22px] m-auto px-2 flex justify-center items-center"
+        style={{
+          backgroundImage: `url(${
+            searching
+              ? "/chevron-left-solid.svg"
+              : "/magnifying-glass-solid.svg"
+          })`,
+          filter: "invert(1)",
+        }}
+        onClick={() => searchOnClick()}
+      ></div>
+
       <input
         type="text"
         placeholder={placeHolder}
-        className={`my-2 px-2 rounded-md mx-2 ${
+        className={`my-2 px-3 outline-none rounded-md mx-2 bg-[#202C33] text-start ${
           selecting && searchUser.length > 0 ? "w-[80%] " : "w-full "
         }`}
         value={searchUser || ""}
         onChange={(e) => setSearchUser(e.target.value)}
       ></input>
-      {selecting && searchUser.length > 0 && (
+      {selecting && (
         <button
-          className="w-[20%] mx-1 bg-white my-2 rounded"
+          className="w-[20%] mx-1 text-[#9CA3AF] my-2 rounded bg-[#202C33] "
           onClick={() => onClickFunction()}
         >
           Add

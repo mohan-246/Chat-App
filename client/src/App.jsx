@@ -1,6 +1,5 @@
 import "./App.css";
-
-import { store } from './redux/store.js'
+import { store } from "./redux/store.js";
 import { Provider } from "react-redux";
 import {
   ClerkProvider,
@@ -9,6 +8,7 @@ import {
   RedirectToSignIn,
 } from "@clerk/clerk-react";
 import ChatPage from "./pages/ChatPage";
+import { dark } from "@clerk/themes";
 
 function App() {
   if (!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY) {
@@ -17,10 +17,15 @@ function App() {
   const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
   return (
-    <ClerkProvider publishableKey={clerkPubKey}>
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      appearance={{
+        baseTheme: dark,
+      }}
+    >
       <SignedIn>
         <Provider store={store}>
-          <ChatPage/>
+          <ChatPage />
         </Provider>
       </SignedIn>
       <SignedOut>

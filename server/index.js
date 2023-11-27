@@ -97,9 +97,9 @@ async function saveRoomAndEmit(newRoom, users, UserMap, io) {
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
-  const userName = socket.handshake.query.userName;
-  const name = socket.handshake.query.name;
-  const image = socket.handshake.query.image;
+  var userName = socket.handshake.query.userName;
+  var name = socket.handshake.query.name;
+  var image = socket.handshake.query.image;
   UserMap.set(userId, [socket, userName, socket.id]);
   joinRooms(socket, userId);
 
@@ -114,7 +114,6 @@ io.on("connection", (socket) => {
 
     await newUser.save();
   });
-
   socket.on("join-chat", async (chatId) => {
     const room = await Rooms.findOne({ id: chatId });
     if (!room) {
@@ -132,7 +131,6 @@ io.on("connection", (socket) => {
     RoomMap[chatId].push(socket.id);
     socket.join(chatId);
   });
-
   socket.on("check-room", async ({ users, name, type }) => {
     if (type == "private") {
       const room = await Rooms.findOne({
@@ -142,6 +140,7 @@ io.on("connection", (socket) => {
         },
       });
       if (room) {
+        console.log("private room exists")
         socket.emit("private-room-exists");
       } else {
         const newRoom = new Rooms({
@@ -165,7 +164,6 @@ io.on("connection", (socket) => {
       saveRoomAndEmit(newRoom, users, UserMap);
     }
   });
-
   socket.on("send-message", async (message) => {
     try {
       const room = await Rooms.findOne({ id: message.to });
@@ -213,11 +211,41 @@ io.on("connection", (socket) => {
 
     io.to(room).emit("added-members", { users, foundRoom });
   });
+  socket.on("user-change", async ({ fullName, imageUrl, username }) => {
+    userName = username;
+    image = imageUrl;
+    name = fullName;
 
+    const existingUser = await User.findOne({ id: userId });
+    if (existingUser){
+    const shouldUpdateName = existingUser.name !== fullName;
+    const shouldUpdateUsername = existingUser.userName !== username;
+    const shouldUpdateImage = existingUser.image !== imageUrl;
+
+    if (shouldUpdateName || shouldUpdateUsername || shouldUpdateImage) {
+      const updates = {};
+
+      if (shouldUpdateName) {
+        updates.name = fullName;
+      }
+
+      if (shouldUpdateUsername) {
+        updates.userName = username;
+      }
+
+      if (shouldUpdateImage) {
+        updates.image = imageUrl;
+      }
+
+      await User.updateOne({ id: userId }, updates);
+      io.emit("updated-user", { id: userId, fullName, imageUrl, username });
+    }}
+
+    
+  });
   socket.on("reconnect", (attemptNumber) => {
     console.log(`Reconnected after attempt ${attemptNumber} id ${socket.id}`);
   });
-
   socket.on("disconnect", async () => {
     UserMap.delete(userId);
     leaveRooms(socket, userId);

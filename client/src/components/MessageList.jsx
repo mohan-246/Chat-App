@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { joinRoom, setCurChat } from "../redux/UserSlice";
-import { useUser } from "@clerk/clerk-react";
+import { UserButton, useUser } from "@clerk/clerk-react";
 import { addRoom, setRoom } from "../redux/RoomSlice";
 import SearchInput from "./SearchInput";
+import { updateUser } from "../redux/UsersSlice";
+import { DateTime } from "luxon";
 
 const MessageList = ({ socket }) => {
   const { user } = useUser();
@@ -17,6 +19,7 @@ const MessageList = ({ socket }) => {
   const [checkboxes, setCheckboxes] = useState({}); // State to manage checkbox statuses
   const users = useSelector((state) => state.Users.users);
   const myRooms = useSelector((state) => state.User.myrooms);
+  const rooms = useSelector((state) => state.Room.rooms);
   const curChat = useSelector((state) => state.User.curChat);
   const dispatch = useDispatch();
 
@@ -37,13 +40,35 @@ const MessageList = ({ socket }) => {
     socket.on("checked-room", handleCheckedRoom);
     socket.on("private-room-exists", handlePrivateRoomExists);
     socket.on("added-members", handleAddedMembers);
+    socket.on("updated-user", handleUpdatedUser);
     return () => {
       socket.off("checked-room", handleCheckedRoom);
       socket.off("private-room-exits", handlePrivateRoomExists);
       socket.off("added-members", handleAddedMembers);
+      socket.off("updated-user", handleUpdatedUser);
     };
   }, [socket]);
+  function searchOnClick() {
+    if (!searching) {
+      setSearching(true);
+    } else {
+      setSelecting(false);
+      setSearching(false);
+      setSelectedUsers([user.id]);
+      setSearchUser("");
+      setCheckboxes({});
+    }
+  }
+  function handleUpdatedUser({ id, username, fullName, imageUrl }) {
+    dispatch(updateUser({ id, username, fullName, imageUrl }));
+    window.alert("handling updated user");
+    console.log(users);
+  }
   function CheckAndCreateRoom() {
+    if (selectedUsers.length == 1) {
+      window.alert("Please select atleast one user");
+      return;
+    }
     if (selectedUsers.length > 2) {
       let groupInput = window.prompt("Enter Group Name");
       if (!groupInput || groupInput.trim() === "" || groupInput.length == 0) {
@@ -106,21 +131,26 @@ const MessageList = ({ socket }) => {
   }
   return (
     <div className="h-screen bg-[#0B141A] flex flex-col text-[#E8ECEE]">
-    <div className="bg-[#202C33]">
-      <SearchInput
-        selecting={selecting}
-        searchUser={searchUser}
-        setSearchUser={setSearchUser}
-        onClickFunction={CheckAndCreateRoom}
-        placeHolder={"Start new chat"}
-      />
-  </div>
-      <div className="overflow-auto">
+      <div className="h-[50px] bg-[#202C33] flex items-center p-2 ">
+        <UserButton />
+      </div>
+      <div className="bg-[##111B21]">
+        <SearchInput
+          selecting={selecting}
+          searchUser={searchUser}
+          setSearchUser={setSearchUser}
+          onClickFunction={CheckAndCreateRoom}
+          placeHolder={"Start new chat"}
+          searching={searching}
+          searchOnClick={searchOnClick}
+        />
+      </div>
+      <div className="overflow-y-auto custom-scrollbar">
         {searching ? (
           foundUsers && foundUsers.length > 0 ? (
             foundUsers.map((user, index) => (
               <div
-                className="h-auto my-1 p-1 bg-[#111B21] relative flex items-center"
+                className="h-auto my-1 p-1 bg-[#202C33] relative flex items-center"
                 key={index}
               >
                 <img
@@ -142,13 +172,18 @@ const MessageList = ({ socket }) => {
               </div>
             ))
           ) : (
-            <p className="h-10 my-1  bg-[#111B21] "> User Not found</p>
+            <p className="h-10 my-1 bg-[#111B21] flex justify-center items-center ">
+              {" "}
+              User Not found
+            </p>
           )
         ) : myRooms && myRooms.length > 0 ? (
           myRooms.map((room, index) => (
             <div
               key={index}
-              className={`flex items-center gap-2  ${room.id == curChat ? "bg-[#2A3942]" : "bg-[#202C33]"}`}
+              className={`flex items-center gap-2 border-[#0B141A] border-b px-2 hover:bg-[#202C33] ${
+                room.id == curChat ? "bg-[#2A3942]" : "bg-[#111b21]"
+              }`}
               onClick={() => dispatch(setCurChat(room.id))}
             >
               <div>
@@ -172,26 +207,82 @@ const MessageList = ({ socket }) => {
                     })
                 )}
               </div>
-              <p className="h-[60px] flex items-center " key={index}>
-                {room.name
-                  ? room.name
-                  : room.members
-                      ?.filter((memberId) => memberId !== user.id)
-                      .map((memberId) => {
-                        const member = users.find(
-                          (user) => user.id === memberId
+              <div className="flex flex-col h-[63px] text-md w-full overflow-x-clip items-start">
+                <div className="flex justify-between w-full">
+                  <p className="whitespace-nowrap mt-[6px] " key={index}>
+                    {room.name
+                      ? room.name
+                      : room.members
+                          ?.filter((memberId) => memberId !== user.id)
+                          .map((memberId) => {
+                            const member = users.find(
+                              (user) => user.id === memberId
+                            );
+                            return (
+                              <span key={memberId}>
+                                {member ? member.name : "Unknown User"}
+                              </span>
+                            );
+                          })}
+                  </p>
+                  <p className="text-[8px] mt-2 mx-1 whitespace-nowrap">
+                    {rooms
+                      .filter((r) => r.id === room.id)
+                      .map((r) => {
+                        const lastMessage = r.messages[r.messages.length - 1];
+
+                        if (!lastMessage) {
+                          return null;
+                        }
+
+                        const messageTime = parseInt(lastMessage.time) ;
+                        const luxonMessageTime = DateTime.fromMillis(
+                          messageTime,
+                          {
+                            zone: "Asia/Kolkata",
+                          }
                         );
+
+                        const today = DateTime.local().setZone("Asia/Kolkata");
+
+                        let formattedDateTime;
+
+                        if (luxonMessageTime.hasSame(today, "day")) {
+                          formattedDateTime =
+                            luxonMessageTime.toFormat("hh:mm a");
+                        } else {
+                          formattedDateTime =
+                            luxonMessageTime.toFormat("dd-MM-yyy");
+                        }
+
                         return (
-                          <span key={memberId}>
-                            {member ? member.name : "Unknown User"}
+                          <span key={lastMessage.time}>
+                            {formattedDateTime}
                           </span>
                         );
                       })}
-              </p>
+                  </p>
+                </div>
+                <p className="text-sm text-[#8696A0] whitespace-nowrap">
+                  {rooms
+                    .filter((r) => r.id == room.id)
+                    .map((r) => {
+                      const content = r.messages[r.messages.length - 1].content;
+                      const truncatedContent = content.slice(0, 50);
+                      return (
+                        <span key={r.messages[r.messages.length - 1].time}>
+                          {truncatedContent.length === content.length
+                            ? truncatedContent
+                            : `${truncatedContent}...`}
+                        </span>
+                      );
+                    })}
+                </p>
+              </div>
             </div>
           ))
         ) : (
-          <p className="h-[60px] my-1 rounded bg-[#033933] ">
+          <p className="h-[60px] my-1 rounded bg-[#202C33] flex items-center p-2 ">
             {" "}
             Join a room to start chatting
           </p>

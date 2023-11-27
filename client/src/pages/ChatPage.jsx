@@ -19,6 +19,16 @@ const ChatPage = () => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    handleUserChange()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[user.fullName , user.imageUrl , user.username])
+  async function handleUserChange() {
+    dispatch(setName(user.fullName))
+    dispatch(setUserName(user.username))
+    dispatch(setImage(user.imageUrl))
+    socket.emit("user-change",{fullName : user.fullName, imageUrl : user.imageUrl, username : user.username})
+  }
   async function fetchData() {
     console.log(user)
     const me = await checkUser(user.id);
@@ -44,10 +54,10 @@ const ChatPage = () => {
   return (
     <div className="h-screen">
       <div className="grid grid-cols-5 gap-0">
-        <div className="col-span-2">
+        <div className="col-span-2 ">
           <MessageList socket={socket} />
         </div>
-        <div className="col-span-3">
+        <div className="col-span-3 border-[#202C33] border-l">
           <ChatBox socket={socket} />
         </div>
       </div>

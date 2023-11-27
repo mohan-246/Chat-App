@@ -1,9 +1,23 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-#show-members-panel{
-    z-index: 1;
+#show-members-panel {
+  z-index: 1;
 }
-#add-members-panel{
-    z-index: 1;
+#add-members-panel {
+  z-index: 1;
+}
+/* Add this to your CSS file or style block */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #4a5568; /* Change the color as per your preference */
+  border-radius: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background-color: #111B21;
+  display: ; /* Change the color as per your preference */
 }

@@ -13,6 +13,7 @@ const AddMembersPanel = ({
   checkboxes,
   setCheckboxes,
   memoizedRoom,
+  searchOnClick
 }) => {
   function AddUserToRoom(userid) {
     setSelecting(true);
@@ -24,12 +25,13 @@ const AddMembersPanel = ({
       setCheckboxes({ ...checkboxes, [userid]: true });
     }
   }
+
   return (
     <div
-      className=" fixed top-0 right-0 h-full w-full flex items-center justify-center bg-black bg-opacity-50"
+      className=" fixed top-[55px] shadow-lg left-[2/5] h-1/2 w-1/3 rounded-lg"
       id="add-members-panel"
     >
-      <div className="bg-[#141414] p-4 h-1/2 max-h-1/2 w-1/3 overflow-auto max-w-1/3">
+      <div className="bg-[#111B21] h-full max-h-1/2 w-full overflow-auto max-w-1/3 rounded-lg text-[#E4E8EB]">
         {" "}
         <SearchInput
           selecting={selecting}
@@ -37,6 +39,8 @@ const AddMembersPanel = ({
           setSearchUser={setSearchUser}
           onClickFunction={AddMembersToRoom}
           placeHolder="Search members"
+          searching={true}
+          searchOnClick={searchOnClick}
         />
         <div>
           {foundUsers && foundUsers.length > 0 ? (
@@ -44,7 +48,7 @@ const AddMembersPanel = ({
               .filter((user) => !memoizedRoom.members.includes(user.id))
               .map((user, index) => (
                 <div
-                  className="h-auto my-1 p-1 bg-[#033933] relative flex items-center"
+                  className="h-auto my-1 p-1 bg-[#0B141A] relative flex items-center"
                   key={index}
                 >
                   <img
@@ -66,7 +70,7 @@ const AddMembersPanel = ({
                 </div>
               ))
           ) : (
-            <p className="h-10 my-1  bg-[#033933] "> User Not found</p>
+            <p className="h-10 my-1  bg-[#202C33] flex justify-center items-center "> User Not found</p>
           )}
         </div>
       </div>

@@ -7,7 +7,7 @@ const ChatInput = ({ sendMessage, setMessage, message }) => {
         placeholder="Type a message"
         value={message || ""}
         onChange={(e) => setMessage(e.target.value)}
-        className="w-[95%] mx-1 rounded-md py-1 px-2 bg-[#2a3942]"
+        className="w-[95%] mx-1 rounded-md py-1 px-3 bg-[#2a3942] text-[#E4E8EB] text-start  outline-none"
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             sendMessage();
@@ -15,13 +15,15 @@ const ChatInput = ({ sendMessage, setMessage, message }) => {
         }}
       />
       <button
-        className="mx-1 rounded-md w-[5%] h-5 align-middle bg-contain bg-no-repeat flex items-center justify-center"
+        className="mx-1 rounded-md w-[5%] h-5 align-middle bg-contain bg-no-repeat flex items-center justify-center transform rotate-12"
         style={{
-          backgroundImage: 'url(/send.png)',
+          backgroundImage: 'url(/paper-plane-solid.svg)',
+          filter: "invert(1)",
         }}
         onClick={sendMessage}
       >
       </button>
+      
     </div>
   );
 };
