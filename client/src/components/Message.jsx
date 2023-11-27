@@ -1,0 +1,94 @@
+import React from "react";
+import { DateTime } from "luxon";
+import { useSelector } from "react-redux";
+import { useUser } from "@clerk/clerk-react";
+
+const Message = ({ message, handleInfoClick, showInfo, selectedMessage, memoizedRoom }) => {
+  const users = useSelector((state) => state.Users.users);
+  const { user } = useUser();
+  
+  return (
+    <div
+      className={`flex mb-2 mx-1 ${
+        message.from === "io"
+          ? "justify-center"
+          : message.from === user.id
+          ? "justify-end"
+          : "justify-start"
+      }`}
+    >
+      {users
+        .filter((u) => u.id === message.from && u.id !== user.id)
+        .map((u) => (
+          <img
+            key={u.id}
+            src={u.image}
+            className="h-8 w-8 rounded-full m-[1px] mt-2"
+            alt={`Profile of ${u.userName}`}
+          ></img>
+        ))}
+      <div
+        className={`rounded-lg inline-block m-[6px] p-2 max-w-[80%] ${
+          message.from === "io"
+            ? "bg-[#182229] text-[#7C8C95]"
+            : message.from === user.id
+            ? "bg-[#005C4B] hover:bg-[#126350] "
+            : "bg-[#202C33] hover:bg-[#283740]"
+        }`}
+        onClick={() => handleInfoClick(message.time)}
+      >
+        <p className="text-[10px]  text-[#A5B337] capitalize">
+          {users
+            .filter(
+              (u) =>
+                u.id == message.from &&
+                u.id != user.id &&
+                memoizedRoom.type == "group"
+            )
+            .map((u) => (
+              <span key={u.id}>{u.name} </span>
+            ))}
+        </p>
+        <div className="flex gap-1">
+          <div>
+            <p className="text-[#E4E8EB]">
+              {showInfo &&
+              message.time === selectedMessage &&
+              message.from !== "io" ? (
+                <>
+                  <span>
+                    From:{" "}
+                    {users
+                      .filter((u) => u.id === message.from)
+                      .map((u) => u.name)}
+                  </span>
+                  <br />
+                  <span>
+                    Date:{" "}
+                    {DateTime.fromMillis(parseInt(message.time), {
+                      zone: "Asia/Kolkata",
+                    }).toFormat("dd MMMM yyyy 'at' hh:mm a")}
+                  </span>
+                </>
+              ) : (
+                message.content
+              )}
+            </p>
+          </div>
+          <div className="mt-auto">
+            {message.from !== "io" &&
+              !(message.time === selectedMessage && showInfo) && (
+                <p className="text-[#869096] text-[8px] mx-1">
+                  {DateTime.fromMillis(parseInt(message.time), {
+                    zone: "Asia/Kolkata",
+                  }).toFormat("hh:mm a")}
+                </p>
+              )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Message;

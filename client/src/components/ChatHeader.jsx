@@ -3,21 +3,18 @@ import { useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useSelector } from "react-redux";
 
-const ChatHeader = ({ memoizedRoom, handleInfoClick, leaveRoom, addMembers }) => {
+const ChatHeader = ({ memoizedRoom, leaveRoom , setCurCard }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user } = useUser();
   const users = useSelector((state) => state.Users.users);
 
   const toggleMenu = () => {
     setIsMenuOpen((prev) => !prev);
-  };
-
-  const closeMenu = () => {
-    setIsMenuOpen(false);
+    setCurCard("")
   };
 
   return (
-    <div className={"bg-[#202C33] p-2 h-[50px] text-lg flex gap-2 items-center relative"}>
+    <div className={"bg-[#202C33] p-2 h-[50px] shadow-lg text-lg flex gap-2 items-center relative"}>
       <div>
         {memoizedRoom.name ? (
           <img
@@ -55,21 +52,21 @@ const ChatHeader = ({ memoizedRoom, handleInfoClick, leaveRoom, addMembers }) =>
           {/* Burger Menu */}
           <div className="ml-2">
             <button
-              className="text-lg font-bold px-2 text-[#AEBAC1] hover:text-white  rounded"
+              className={`text-lg font-bold px-2 text-[#AEBAC1] hover:text-white  rounded ${!isMenuOpen ? "transform rotate-90" : "mr-2"}`}
               onClick={toggleMenu}
             >
-              ☰
+               <span dangerouslySetInnerHTML={{ __html: !isMenuOpen ? '&hellip;' : 'X' }} />
             </button>
             {isMenuOpen && (
-              <div className="absolute top-0 right-0 mt-[44px] mr-[2px] bg-[#202C33]  whitespace-nowrap text-[#AEBAC1]  rounded-lg w-auto shadow">
+              <div className="absolute top-0 right-0 mt-[44px] mr-[2px] bg-[#233138]  whitespace-nowrap text-[#AEBAC1]  rounded-lg w-[200px] shadow">
 
-                <button className="block pt-4 p-2 text-sm hover:bg-[#233138] hover:text-white hover:rounded-lg  w-full text-start text-md" onClick={handleInfoClick}>
+                <button className="block pt-4 p-3 text-sm hover:bg-[#202C33] hover:text-white hover:rounded-lg px-5 w-full text-start text-md" onClick={() => setCurCard("showMembers")}>
                   Show Members
                 </button>
-                <button className="block pt-4 p-2 text-sm hover:bg-[#233138] hover:text-white w-full text-start text-md" onClick={addMembers}>
+                <button className="block pt-4 p-2 text-sm hover:bg-[#202C33] hover:text-white w-full text-start px-5 text-md" onClick={() => setCurCard("addingMembers")}>
                   Add Members 
                 </button>
-                <button className="block pt-4 p-2 text-sm hover:bg-[#233138] hover:text-white hover:rounded-lg  w-full text-start text-md" onClick={leaveRoom}>
+                <button className="block pt-4 p-2 text-sm hover:bg-[#202C33] hover:text-white hover:rounded-lg px-5 w-full text-start text-md" onClick={leaveRoom}>
                   Leave Room 
                 </button>
               </div>

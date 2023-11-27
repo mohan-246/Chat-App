@@ -11,14 +11,15 @@ const SearchInput = ({
   return (
     <div className="flex h-[50px] m-1">
       <div
-        className="bg-cover bg-center h-[22px] w-[22px] m-auto px-2 flex justify-center items-center"
+        className="bg-cover bg-center bg-no-repeat h-[22px] w-[22px] m-auto px-2 flex justify-center items-center"
         style={{
           backgroundImage: `url(${
-            searching
+            searching || searchUser.length > 0
               ? "/chevron-left-solid.svg"
               : "/magnifying-glass-solid.svg"
           })`,
           filter: "invert(1)",
+          backgroundSize: "contain",
         }}
         onClick={() => searchOnClick()}
       ></div>

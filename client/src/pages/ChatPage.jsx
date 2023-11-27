@@ -52,7 +52,7 @@ const ChatPage = () => {
     }
   }
   return (
-    <div className="h-screen">
+    <div className="h-screen min-w-[845px] custom-scrollbar">
       <div className="grid grid-cols-5 gap-0">
         <div className="col-span-2 ">
           <MessageList socket={socket} />

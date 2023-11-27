@@ -8,7 +8,7 @@ import { useUser } from "@clerk/clerk-react";
 import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import AddMembersPanel from "./AddMembersPanel";
-import { DateTime } from "luxon";
+import Message from "./Message";
 
 const ChatBox = ({ socket }) => {
   const dispatch = useDispatch();
@@ -19,9 +19,8 @@ const ChatBox = ({ socket }) => {
   const [searchUser, setSearchUser] = useState("");
   const [foundUsers, setFoundUsers] = useState([]);
   const [selecting, setSelecting] = useState(false);
-  const [showMembers, setShowMembers] = useState(false);
   const [checkboxes, setCheckboxes] = useState({});
-  const [addingMembers, setAddingMembers] = useState(false);
+  const [curCard, setCurCard] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [message, setMessage] = useState("");
   const FinalRef = useRef();
@@ -57,22 +56,6 @@ const ChatBox = ({ socket }) => {
     );
     setFoundUsers(usersFound);
   }, [searchUser]);
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showMembers && event.target.id == "show-members-panel") {
-        handleInfoClick();
-      }
-      if (addingMembers && event.target.id == "add-members-panel") {
-        handleAddMembers();
-      }
-    };
-
-    window.addEventListener("click", handleClickOutside);
-
-    return () => {
-      window.removeEventListener("click", handleClickOutside);
-    };
-  }, [showMembers, addingMembers]);
 
   function handleLeftRoom({ user, room, members }) {
     dispatch(removeUserFromRoom({ user, room, members }));
@@ -121,9 +104,6 @@ const ChatBox = ({ socket }) => {
       }
     }
   }
-  function handleInfoClick() {
-    setShowMembers((prev) => !prev);
-  }
   function handleLeaveRoom() {
     const foundRoom = rooms.find((r) => r.id === curChat);
 
@@ -136,9 +116,7 @@ const ChatBox = ({ socket }) => {
       console.error(`Room with ID ${curChat} not found.`);
     }
   }
-  function handleAddMembers() {
-    setAddingMembers((prevAddingMembers) => !prevAddingMembers);
-  }
+
   function AddMembersToRoom() {
     if (selectedUsers.length == 0) {
       window.alert("Please select atleast one user");
@@ -152,41 +130,55 @@ const ChatBox = ({ socket }) => {
     setSelecting(false);
     setSelectedUsers([]);
     setSearchUser("");
+    setCurCard("");
     setCheckboxes({});
-    setAddingMembers(false);
   }
   function searchOnClick() {
     setSelecting(false);
     setSelectedUsers([]);
     setSearchUser("");
+    setCurCard("");
     setCheckboxes({});
-    setAddingMembers(false);
   }
   return (
     <div className="h-screen flex flex-col ">
       {curChat ? (
         <div className="h-screen flex flex-col">
           <ChatHeader
-            handleInfoClick={handleInfoClick}
             memoizedRoom={memoizedRoom}
             leaveRoom={handleLeaveRoom}
-            addMembers={handleAddMembers}
+            setCurCard={setCurCard}
           />
-          <div className="bg-[#0B141A] flex-1 overflow-y-auto" id="chatbox">
-            {showMembers && (
+          <div
+            className="bg-[#0B141A] flex-1 overflow-y-auto custom-scrollbar-2"
+            id="chatbox"
+          >
+            {curCard == "showMembers" && (
               <div
-                className="fixed top-[55px] left-[2/5] ml-1 flex items-center justify-center bg-black bg-opacity-50"
+                className="absolute top-[55px] left-[2/5] ml-1 flex items-center justify-center bg-black bg-opacity-50"
                 id="show-members-panel"
               >
-                <div className="bg-[#202C33] rounded-lg  p-4 max-h-1/2 overflow-auto max-w-1/4 text-[#E8ECEE]">
-                  <h2 className="text-lg font-bold mb-2 border-[#6C7B85] border-b">
-                    Room Members
-                  </h2>
+                <div className="bg-[#111B21] shadow-lg rounded-lg p-3 w-[300px] overflow-auto  text-[#E8ECEE]">
+                  <div className="flex">
+                    <div
+                      className="bg-cover bg-center mx-1 bg-no-repeat h-[22px] w-[5%] m-auto flex justify-center items-center"
+                      style={{
+                        backgroundImage: `url(/chevron-left-solid.svg)`,
+                        backgroundSize: "contain", // or "cover" based on your preference
+                        filter: "invert(1)",
+                      }}
+                      onClick={() => setCurCard("")}
+                    ></div>
+                    <h2 className="text-lg font-bold mb-2 mx-2 border-[#6C7B85] border-b flex-1">
+                      Room Members
+                    </h2>
+                  </div>
+
                   <ul>
                     {memoizedRoom.members.map((memberId) => {
                       const member = users.find((u) => u.id === memberId);
                       return (
-                        <li key={memberId} className="mb-1">
+                        <li key={memberId} className="mb-1 px-8 py-1">
                           {member ? member.name : "Unknown User"}
                         </li>
                       );
@@ -199,90 +191,21 @@ const ChatBox = ({ socket }) => {
             <div>
               {memoizedRoom &&
                 memoizedRoom.messages.map((message) => (
-                  <div
+                  <Message
                     key={message.time}
-                    className={`flex mb-2 mx-1 ${
-                      message.from == "io"
-                        ? "justify-center"
-                        : message.from === user.id
-                        ? "justify-end"
-                        : "justify-start"
-                    }`}
-                    onClick={() => handleMessageInfoClick(message.time)}
-                  >
-                    {" "}
-                    {users
-                      .filter((u) => u.id === message.from && u.id != user.id)
-                      .map((u) => (
-                        <img
-                          key={u.id}
-                          src={u.image}
-                          className="h-8 w-8 rounded-full m-[1px] mt-2"
-                        ></img>
-                      ))}
-                    <div
-                      className={`rounded-lg inline-block m-[6px] p-2 max-w-[80%] ${
-                        message.from == "io"
-                          ? "bg-[#182229] text-[#7C8C95]"
-                          : message.from === user.id
-                          ? "bg-[#005C4B] hover:bg-[#126350] "
-                          : "bg-[#202C33] hover:bg-[#283740]"
-                      }`}
-                    >
-                      <p className="text-[10px] opacity-80 text-[#A5B337] capitalize">
-                        {users
-                          .filter(
-                            (u) =>
-                              u.id === message.from &&
-                              u.id != user.id &&
-                              memoizedRoom.type == "group"
-                          )
-                          .map((u) => (
-                            <span key={u.id}>{u.name} </span>
-                          ))}
-                      </p>
-                      <div className="flex gap-1">
-                        <div>
-                          <p className="text-[#E4E8EB]">
-                            {showInfo && message.time == selectedMessage ? (
-                              <>
-                                <span>
-                                  From:{" "}
-                                  {users
-                                    .filter((u) => u.id === message.from)
-                                    .map((u) => u.name)}
-                                </span>
-                                <br />
-                                <span>
-                                  Time:{" "}
-                                  {DateTime.fromMillis(parseInt(message.time), {
-                                    zone: "Asia/Kolkata",
-                                  }).toFormat("dd MMMM yyyy 'at' hh:mm a")}
-                                </span>
-                              </>
-                            ) : (
-                              message.content
-                            )}
-                          </p>
-                        </div>
-                        <div className="mt-auto">
-                          {message.from !== "io" && message.time !== selectedMessage  && (
-                            <p className="text-[#869096] text-[8px] mx-1">
-                              {DateTime.fromMillis(parseInt(message.time), {
-                                zone: "Asia/Kolkata",
-                              }).toFormat("hh:mm a")}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    message={message}
+                    handleInfoClick={handleMessageInfoClick}
+                    showInfo={showInfo}
+                    selectedMessage={selectedMessage}
+                    memoizedRoom={memoizedRoom}
+                  />
+                  
                 ))}
             </div>
 
             <p ref={FinalRef}></p>
           </div>
-          {memoizedRoom && addingMembers && (
+          {memoizedRoom && curCard == "addingMembers" && (
             <AddMembersPanel
               searchUser={searchUser}
               setSearchUser={setSearchUser}

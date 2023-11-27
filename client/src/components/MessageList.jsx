@@ -8,15 +8,21 @@ import { addRoom, setRoom } from "../redux/RoomSlice";
 import SearchInput from "./SearchInput";
 import { updateUser } from "../redux/UsersSlice";
 import { DateTime } from "luxon";
+import Room from "./Room";
+import FoundUser from "./FoundUser";
 
 const MessageList = ({ socket }) => {
   const { user } = useUser();
   const [searchUser, setSearchUser] = useState("");
   const [foundUsers, setFoundUsers] = useState([]);
+  const [foundRooms, setFoundRooms] = useState([]);
   const [searching, setSearching] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([user.id]);
-  const [checkboxes, setCheckboxes] = useState({}); // State to manage checkbox statuses
+  const [checkboxes, setCheckboxes] = useState({});
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [curCard, setCurCard] = useState("");
+
   const users = useSelector((state) => state.Users.users);
   const myRooms = useSelector((state) => state.User.myrooms);
   const rooms = useSelector((state) => state.Room.rooms);
@@ -24,16 +30,32 @@ const MessageList = ({ socket }) => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const usersFound = users.filter(
-      (foundUser) =>
-        foundUser.userName.toLowerCase().includes(searchUser.toLowerCase()) &&
-        foundUser.id != user.id
-    );
-    setFoundUsers(usersFound);
-    if (searchUser && searchUser.length > 0) {
-      setSearching(true);
+    if (searching) {
+      const usersFound = users.filter(
+        (foundUser) =>
+          foundUser.userName.toLowerCase().includes(searchUser.toLowerCase()) &&
+          foundUser.id != user.id
+      );
+      setFoundUsers(usersFound);
     } else {
-      setSearching(false);
+      const roomsFound = rooms.filter((r) => {
+        if (r.type === "group") {
+          return r.name.toLowerCase().includes(searchUser.toLowerCase());
+        } else {
+          const memberNames = r.members
+            .filter((memberId) => memberId !== user.id)
+            .map((memberId) => {
+              const member = users.find((u) => u.id === memberId);
+              return member ? member.name : "Unknown User";
+            });
+          return memberNames
+            .join(" ")
+            .toLowerCase()
+            .includes(searchUser.toLowerCase());
+        }
+      });
+      console.log(roomsFound);
+      setFoundRooms(roomsFound);
     }
   }, [searchUser]);
   useEffect(() => {
@@ -49,14 +71,15 @@ const MessageList = ({ socket }) => {
     };
   }, [socket]);
   function searchOnClick() {
-    if (!searching) {
-      setSearching(true);
-    } else {
+    if (searching) {
       setSelecting(false);
       setSearching(false);
       setSelectedUsers([user.id]);
       setSearchUser("");
       setCheckboxes({});
+    }
+    else{
+      setSearchUser("")
     }
   }
   function handleUpdatedUser({ id, username, fullName, imageUrl }) {
@@ -129,10 +152,41 @@ const MessageList = ({ socket }) => {
     }
     dispatch(setRoom(foundRoom));
   }
+  const toggleMenu = () => {
+    setIsMenuOpen((prev) => !prev);
+    setCurCard("");
+  };
   return (
     <div className="h-screen bg-[#0B141A] flex flex-col text-[#E8ECEE]">
-      <div className="h-[50px] bg-[#202C33] flex items-center p-2 ">
+      <div className="h-[50px] bg-[#202C33] flex items-center p-2 flex-none ">
         <UserButton />
+        <div className="ml-auto relative">
+          <button
+            className={`text-lg font-bold px-2 text-[#AEBAC1] ml-auto hover:text-white  rounded ${
+              !isMenuOpen ? "transform rotate-90" : "mr-2"
+            }`}
+            onClick={toggleMenu}
+          >
+            <span
+              dangerouslySetInnerHTML={{
+                __html: !isMenuOpen ? "&hellip;" : "X",
+              }}
+            />
+          </button>
+          {isMenuOpen && (
+            <div className="top-[35px] absolute right-0 mt-4 mr-1 bg-[#233138]  whitespace-nowrap text-[#AEBAC1] w-[150px] rounded-lg shadow-lg">
+              <p
+                className="block pt-4 p-3 text-sm hover:bg-[#233138] hover:text-white hover:rounded-lg px-5 w-full text-start text-md"
+                onClick={() => {
+                  setSearching(true);
+                  setIsMenuOpen(false);
+                }}
+              >
+                New Group
+              </p>
+            </div>
+          )}
+        </div>
       </div>
       <div className="bg-[##111B21]">
         <SearchInput
@@ -140,7 +194,7 @@ const MessageList = ({ socket }) => {
           searchUser={searchUser}
           setSearchUser={setSearchUser}
           onClickFunction={CheckAndCreateRoom}
-          placeHolder={"Start new chat"}
+          placeHolder={"Search or start new chat"}
           searching={searching}
           searchOnClick={searchOnClick}
         />
@@ -149,27 +203,12 @@ const MessageList = ({ socket }) => {
         {searching ? (
           foundUsers && foundUsers.length > 0 ? (
             foundUsers.map((user, index) => (
-              <div
-                className="h-auto my-1 p-1 bg-[#202C33] relative flex items-center"
+              <FoundUser
                 key={index}
-              >
-                <img
-                  src={user.image}
-                  className="h-8 w-8 rounded-full"
-                  alt={`Profile of ${user.userName}`}
-                />
-                <div className="ml-2 flex-grow">
-                  <span className="font-semibold block">{user.userName}</span>
-                  <span className="block">{`(${user.name})`}</span>
-                </div>
-                <label className="absolute top-1 right-1">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 border-gray-400 rounded-full mr-1"
-                    onChange={() => AddUserToRoom(user.id)}
-                  />
-                </label>
-              </div>
+                user={user}
+                index={index}
+                AddUserToRoom={AddUserToRoom}
+              />
             ))
           ) : (
             <p className="h-10 my-1 bg-[#111B21] flex justify-center items-center ">
@@ -177,113 +216,32 @@ const MessageList = ({ socket }) => {
               User Not found
             </p>
           )
+        ) : foundRooms && searchUser.length > 0 ? (
+          foundRooms.length > 0 ? (
+            foundRooms.map((room, index) => (
+              <Room
+                key={index}
+                room={room}
+                curChat={curChat}
+                onClick={() => dispatch(setCurChat(room.id))}
+              />
+            ))
+          ) : (
+            <p className="h-10 my-1 bg-[#111B21] flex justify-center items-center">
+              No chats found
+            </p>
+          )
         ) : myRooms && myRooms.length > 0 ? (
           myRooms.map((room, index) => (
-            <div
+            <Room
               key={index}
-              className={`flex items-center gap-2 border-[#0B141A] border-b px-2 hover:bg-[#202C33] ${
-                room.id == curChat ? "bg-[#2A3942]" : "bg-[#111b21]"
-              }`}
+              room={room}
+              curChat={curChat}
               onClick={() => dispatch(setCurChat(room.id))}
-            >
-              <div>
-                {room.name ? (
-                  <img
-                    src="https://cdn.pixabay.com/photo/2020/05/29/13/26/icons-5235125_1280.png"
-                    className="h-8 w-8 rounded-full m-[4px]"
-                  />
-                ) : (
-                  room.members
-                    .filter((memberId) => memberId !== user.id)
-                    .map((memberId) => {
-                      const member = users.find((u) => u.id === memberId);
-                      return (
-                        <img
-                          key={memberId}
-                          src={member.image}
-                          className="h-8 w-8 rounded-full m-[4px]"
-                        />
-                      );
-                    })
-                )}
-              </div>
-              <div className="flex flex-col h-[63px] text-md w-full overflow-x-clip items-start">
-                <div className="flex justify-between w-full">
-                  <p className="whitespace-nowrap mt-[6px] " key={index}>
-                    {room.name
-                      ? room.name
-                      : room.members
-                          ?.filter((memberId) => memberId !== user.id)
-                          .map((memberId) => {
-                            const member = users.find(
-                              (user) => user.id === memberId
-                            );
-                            return (
-                              <span key={memberId}>
-                                {member ? member.name : "Unknown User"}
-                              </span>
-                            );
-                          })}
-                  </p>
-                  <p className="text-[8px] mt-2 mx-1 whitespace-nowrap">
-                    {rooms
-                      .filter((r) => r.id === room.id)
-                      .map((r) => {
-                        const lastMessage = r.messages[r.messages.length - 1];
-
-                        if (!lastMessage) {
-                          return null;
-                        }
-
-                        const messageTime = parseInt(lastMessage.time) ;
-                        const luxonMessageTime = DateTime.fromMillis(
-                          messageTime,
-                          {
-                            zone: "Asia/Kolkata",
-                          }
-                        );
-
-                        const today = DateTime.local().setZone("Asia/Kolkata");
-
-                        let formattedDateTime;
-
-                        if (luxonMessageTime.hasSame(today, "day")) {
-                          formattedDateTime =
-                            luxonMessageTime.toFormat("hh:mm a");
-                        } else {
-                          formattedDateTime =
-                            luxonMessageTime.toFormat("dd-MM-yyy");
-                        }
-
-                        return (
-                          <span key={lastMessage.time}>
-                            {formattedDateTime}
-                          </span>
-                        );
-                      })}
-                  </p>
-                </div>
-                <p className="text-sm text-[#8696A0] whitespace-nowrap">
-                  {rooms
-                    .filter((r) => r.id == room.id)
-                    .map((r) => {
-                      const content = r.messages[r.messages.length - 1].content;
-                      const truncatedContent = content.slice(0, 50);
-                      return (
-                        <span key={r.messages[r.messages.length - 1].time}>
-                          {truncatedContent.length === content.length
-                            ? truncatedContent
-                            : `${truncatedContent}...`}
-                        </span>
-                      );
-                    })}
-                </p>
-              </div>
-            </div>
+            />
           ))
         ) : (
           <p className="h-[60px] my-1 rounded bg-[#202C33] flex items-center p-2 ">
-            {" "}
             Join a room to start chatting
           </p>
         )}
