@@ -34,3 +34,24 @@
   background-color: #0B141A;
   
 }
+.cl-internal-1w67h8a {
+  box-sizing: inherit;
+  display: flex;
+  flex-flow: column;
+  -webkit-box-align: stretch;
+  align-items: stretch;
+  -webkit-box-pack: start;
+  justify-content: flex-start;
+  will-change: transform, opacity, height;
+  border-radius: 0.5rem;
+  background-color: #0B141A;
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-duration: 200ms;
+  box-shadow: #0B141A 0px 24px 48px;
+  border: 1px solid transparent;
+  padding: 1.5rem 0px;
+  width: 23.5rem;
+  max-width: calc(100vw - 2rem);
+  z-index: 10000;
+  animation: 140ms ease 0s 1 normal none running animation-f2u89x;
+}

@@ -9,6 +9,7 @@ import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import AddMembersPanel from "./AddMembersPanel";
 import Message from "./Message";
+import ShowMembers from "./ShowMembers";
 
 const ChatBox = ({ socket }) => {
   const dispatch = useDispatch();
@@ -16,6 +17,9 @@ const ChatBox = ({ socket }) => {
   const curChat = useSelector((state) => state.User.curChat);
   const rooms = useSelector((state) => state.Room.rooms);
   const users = useSelector((state) => state.Users.users);
+  const myRooms = useSelector((state) => state.User.myrooms);
+  const FinalRef = useRef();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchUser, setSearchUser] = useState("");
   const [foundUsers, setFoundUsers] = useState([]);
   const [selecting, setSelecting] = useState(false);
@@ -23,19 +27,13 @@ const ChatBox = ({ socket }) => {
   const [curCard, setCurCard] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [message, setMessage] = useState("");
-  const FinalRef = useRef();
-  const myRooms = useSelector((state) => state.User.myrooms);
+  const [showInfo, setShowInfo] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState(null);
   const memoizedRoom = useMemo(
     () => rooms.find((room) => room.id === curChat),
     [rooms, curChat]
   );
-  const [showInfo, setShowInfo] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState(null);
 
-  function handleMessageInfoClick(message) {
-    setShowInfo((prev) => !prev);
-    setSelectedMessage(message);
-  }
   useEffect(() => {
     socket.on("sent-message", handleSentMessage);
     socket.on("left-room", handleLeftRoom);
@@ -47,7 +45,11 @@ const ChatBox = ({ socket }) => {
   }, [socket]);
   useEffect(() => {
     scrollToBottom();
-  }, [curChat, rooms, myRooms, users]);
+  }, [curChat, memoizedRoom]);
+  useEffect(() => {
+    setCurCard("")
+    setIsMenuOpen(false)
+  },[curChat])
   useEffect(() => {
     const usersFound = users.filter(
       (foundUser) =>
@@ -57,15 +59,15 @@ const ChatBox = ({ socket }) => {
     setFoundUsers(usersFound);
   }, [searchUser]);
 
-  function handleLeftRoom({ user, room, members }) {
+  const handleLeftRoom = ({ user, room, members }) => {
     dispatch(removeUserFromRoom({ user, room, members }));
     setCurChat(curChat);
   }
-  function handleSentMessage(message) {
+  const handleSentMessage = (message) => {
     dispatch(addMessageToRoom(message));
     scrollToBottom();
   }
-  function sendMessage() {
+  const sendMessage = () => {
     if (message.trim() === "") {
       return;
     }
@@ -79,7 +81,7 @@ const ChatBox = ({ socket }) => {
     setMessage("");
     dispatch(addMessageToRoom(messageWithId));
   }
-  function sendIoMessage(ioMessage) {
+  const sendIoMessage = (ioMessage) => {
     const messageWithId = {
       from: "io",
       to: curChat,
@@ -89,7 +91,7 @@ const ChatBox = ({ socket }) => {
     socket.emit("send-message", messageWithId);
     dispatch(addMessageToRoom(messageWithId));
   }
-  function scrollToBottom() {
+  const scrollToBottom = () => {
     if (FinalRef.current) {
       const container = FinalRef.current.parentElement;
       const scrollThreshold = 150;
@@ -104,7 +106,7 @@ const ChatBox = ({ socket }) => {
       }
     }
   }
-  function handleLeaveRoom() {
+  const handleLeaveRoom = () => {
     const foundRoom = rooms.find((r) => r.id === curChat);
 
     if (foundRoom) {
@@ -116,8 +118,7 @@ const ChatBox = ({ socket }) => {
       console.error(`Room with ID ${curChat} not found.`);
     }
   }
-
-  function AddMembersToRoom() {
+  const AddMembersToRoom = () => {
     if (selectedUsers.length == 0) {
       window.alert("Please select atleast one user");
       return;
@@ -133,13 +134,18 @@ const ChatBox = ({ socket }) => {
     setCurCard("");
     setCheckboxes({});
   }
-  function searchOnClick() {
+  const searchOnClick = () => {
     setSelecting(false);
     setSelectedUsers([]);
     setSearchUser("");
     setCurCard("");
     setCheckboxes({});
   }
+  const handleMessageInfoClick = (message) => {
+    setShowInfo((prev) => !prev);
+    setSelectedMessage(message);
+  }
+
   return (
     <div className="h-screen flex flex-col ">
       {curChat ? (
@@ -148,44 +154,19 @@ const ChatBox = ({ socket }) => {
             memoizedRoom={memoizedRoom}
             leaveRoom={handleLeaveRoom}
             setCurCard={setCurCard}
+            isMenuOpen={isMenuOpen}
+            setIsMenuOpen={setIsMenuOpen}
           />
           <div
             className="bg-[#0B141A] flex-1 overflow-y-auto custom-scrollbar-2"
             id="chatbox"
           >
-            {curCard == "showMembers" && (
-              <div
-                className="absolute top-[55px] left-[2/5] ml-1 flex items-center justify-center bg-black bg-opacity-50"
-                id="show-members-panel"
-              >
-                <div className="bg-[#111B21] shadow-lg rounded-lg p-3 w-[300px] overflow-auto  text-[#E8ECEE]">
-                  <div className="flex">
-                    <div
-                      className="bg-cover bg-center mx-1 bg-no-repeat h-[22px] w-[5%] m-auto flex justify-center items-center"
-                      style={{
-                        backgroundImage: `url(/chevron-left-solid.svg)`,
-                        backgroundSize: "contain", // or "cover" based on your preference
-                        filter: "invert(1)",
-                      }}
-                      onClick={() => setCurCard("")}
-                    ></div>
-                    <h2 className="text-lg font-bold mb-2 mx-2 border-[#6C7B85] border-b flex-1">
-                      Room Members
-                    </h2>
-                  </div>
-
-                  <ul>
-                    {memoizedRoom.members.map((memberId) => {
-                      const member = users.find((u) => u.id === memberId);
-                      return (
-                        <li key={memberId} className="mb-1 px-8 py-1">
-                          {member ? member.name : "Unknown User"}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              </div>
+            {curCard === "showMembers" && (
+              <ShowMembers
+                setCurCard={setCurCard}
+                memoizedRoom={memoizedRoom}
+                users={users}
+              />
             )}
 
             <div>
@@ -199,7 +180,6 @@ const ChatBox = ({ socket }) => {
                     selectedMessage={selectedMessage}
                     memoizedRoom={memoizedRoom}
                   />
-                  
                 ))}
             </div>
 
@@ -219,7 +199,6 @@ const ChatBox = ({ socket }) => {
               setCheckboxes={setCheckboxes}
               memoizedRoom={memoizedRoom}
               searchOnClick={searchOnClick}
-              
             />
           )}
 

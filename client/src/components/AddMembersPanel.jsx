@@ -15,7 +15,7 @@ const AddMembersPanel = ({
   memoizedRoom,
   searchOnClick
 }) => {
-  function AddUserToRoom(userid) {
+  const AddUserToRoom = (userid) => {
     setSelecting(true);
     if (selectedUsers.includes(userid)) {
       setSelectedUsers((prevUsers) => prevUsers.filter((id) => id !== userid));

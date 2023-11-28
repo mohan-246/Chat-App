@@ -7,12 +7,13 @@ import { UserButton, useUser } from "@clerk/clerk-react";
 import { addRoom, setRoom } from "../redux/RoomSlice";
 import SearchInput from "./SearchInput";
 import { updateUser } from "../redux/UsersSlice";
-import { DateTime } from "luxon";
 import Room from "./Room";
 import FoundUser from "./FoundUser";
 
 const MessageList = ({ socket }) => {
   const { user } = useUser();
+  // eslint-disable-next-line no-unused-vars
+  const [curCard, setCurCard] = useState("");
   const [searchUser, setSearchUser] = useState("");
   const [foundUsers, setFoundUsers] = useState([]);
   const [foundRooms, setFoundRooms] = useState([]);
@@ -21,8 +22,6 @@ const MessageList = ({ socket }) => {
   const [selectedUsers, setSelectedUsers] = useState([user.id]);
   const [checkboxes, setCheckboxes] = useState({});
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // eslint-disable-next-line no-unused-vars
-  const [curCard, setCurCard] = useState("");
   const [sortedMyRooms, setSortedMyRooms] = useState([]);
 
   const users = useSelector((state) => state.Users.users);
@@ -96,7 +95,7 @@ const MessageList = ({ socket }) => {
       socket.off("updated-user", handleUpdatedUser);
     };
   }, [socket]);
-  function searchOnClick() {
+  const searchOnClick = () => {
     if (searching) {
       setSelecting(false);
       setSearching(false);
@@ -106,20 +105,20 @@ const MessageList = ({ socket }) => {
     } else {
       setSearchUser("");
     }
-  }
-  function handleUpdatedUser({ id, username, fullName, imageUrl }) {
+  };
+  const handleUpdatedUser = ({ id, username, fullName, imageUrl }) => {
     dispatch(updateUser({ id, username, fullName, imageUrl }));
     window.alert("handling updated user");
     console.log(users);
-  }
-  function CheckAndCreateRoom() {
-    if (selectedUsers.length == 1) {
-      window.alert("Please select atleast one user");
+  };
+  const CheckAndCreateRoom = () => {
+    if (selectedUsers.length === 1) {
+      window.alert("Please select at least one user");
       return;
     }
     if (selectedUsers.length > 2) {
       let groupInput = window.prompt("Enter Group Name");
-      if (!groupInput || groupInput.trim() === "" || groupInput.length == 0) {
+      if (!groupInput || groupInput.trim() === "" || groupInput.length === 0) {
         window.alert("Please enter a valid group name");
         return;
       }
@@ -138,8 +137,8 @@ const MessageList = ({ socket }) => {
     setSelectedUsers([user.id]);
     setSearchUser("");
     setCheckboxes({});
-  }
-  function AddUserToRoom(userid) {
+  };
+  const AddUserToRoom = (userid) => {
     setSelecting(true);
 
     setSelectedUsers((prevUsers) => {
@@ -153,10 +152,10 @@ const MessageList = ({ socket }) => {
       ...prevCheckboxes,
       [userid]: !prevCheckboxes[userid],
     }));
-  }
-  function handlePrivateRoomExists() {
+  };
+  const handlePrivateRoomExists = () => {
     window.alert("private chat with user already exists");
-  }
+  };
   const handleCheckedRoom = (room) => {
     dispatch(addRoom(room));
     socket.emit("join-chat", room.id);
@@ -169,7 +168,7 @@ const MessageList = ({ socket }) => {
       })
     );
   };
-  function handleAddedMembers({ users, foundRoom }) {
+  const handleAddedMembers = ({ users, foundRoom }) => {
     if (users.includes(user.id)) {
       dispatch(
         joinRoom({
@@ -181,10 +180,10 @@ const MessageList = ({ socket }) => {
       );
     }
     dispatch(setRoom(foundRoom));
-  }
-  function handleRoomClick(room) {
+  };
+  const handleRoomClick = (room) => {
     dispatch(setCurChat(room.id));
-  }
+  };
   const toggleMenu = () => {
     setIsMenuOpen((prev) => !prev);
     setCurCard("");
@@ -193,7 +192,7 @@ const MessageList = ({ socket }) => {
   return (
     <div className="h-screen bg-[#0B141A] flex flex-col text-[#E8ECEE]">
       <div className="h-[50px] bg-[#202C33] flex items-center p-2 flex-none ">
-        <UserButton />
+      <UserButton className="bg-red-100" />
         <div className="ml-auto relative">
           <button
             className={`text-lg font-bold px-2 text-[#AEBAC1] ml-auto hover:text-white  rounded ${

@@ -9,6 +9,7 @@ const ChatInput = ({ sendMessage, setMessage, message, curChat }) => {
       inputRef.current.focus();
     }
   }, [inputRef, curChat]);
+  
   return (
     <div className="bg-[#202C33] px-2 py-3 flex items-center">
       <input

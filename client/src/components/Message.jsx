@@ -3,10 +3,16 @@ import { DateTime } from "luxon";
 import { useSelector } from "react-redux";
 import { useUser } from "@clerk/clerk-react";
 
-const Message = ({ message, handleInfoClick, showInfo, selectedMessage, memoizedRoom }) => {
+const Message = ({
+  message,
+  handleInfoClick,
+  showInfo,
+  selectedMessage,
+  memoizedRoom,
+}) => {
   const users = useSelector((state) => state.Users.users);
   const { user } = useUser();
-  
+
   return (
     <div
       className={`flex mb-2 mx-1 ${
@@ -30,7 +36,7 @@ const Message = ({ message, handleInfoClick, showInfo, selectedMessage, memoized
       <div
         className={`rounded-lg inline-block m-[6px] p-2 max-w-[80%] ${
           message.from === "io"
-            ? "bg-[#182229] text-[#7C8C95]"
+            ? "bg-[#182229] "
             : message.from === user.id
             ? "bg-[#005C4B] hover:bg-[#126350] "
             : "bg-[#202C33] hover:bg-[#283740]"
@@ -51,7 +57,13 @@ const Message = ({ message, handleInfoClick, showInfo, selectedMessage, memoized
         </p>
         <div className="flex gap-1">
           <div>
-            <p className="text-[#E4E8EB]">
+            <p
+              className={`${
+                message.from == "io"
+                  ? "text-[#8696A0] text-sm"
+                  : "text-[#E4E8EB]"
+              }`}
+            >
               {showInfo &&
               message.time === selectedMessage &&
               message.from !== "io" ? (

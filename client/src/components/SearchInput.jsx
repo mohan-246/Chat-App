@@ -8,6 +8,7 @@ const SearchInput = ({
   searching,
   searchOnClick,
 }) => {
+  
   return (
     <div className="flex h-[50px] m-1">
       <div
