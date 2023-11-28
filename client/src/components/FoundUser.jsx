@@ -1,6 +1,6 @@
 import React from 'react';
 
-const FoundUser = ({ user, index, AddUserToRoom }) => (
+const FoundUser = ({ user, index, AddUserToRoom, checkboxes }) => (
   <div className="h-auto my-1 p-1 bg-[#202C33] relative flex items-center" key={index}>
     <img
       src={user.image}
@@ -16,6 +16,7 @@ const FoundUser = ({ user, index, AddUserToRoom }) => (
         type="checkbox"
         className="h-4 w-4 border-gray-400 rounded-full mr-1"
         onChange={() => AddUserToRoom(user.id)}
+        checked={checkboxes[user.id]}
       />
     </label>
   </div>

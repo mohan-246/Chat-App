@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import MessageList from "../components/MessageList";
 import ChatBox from "../components/ChatBox";
 import { useDispatch } from "react-redux";
@@ -34,7 +34,7 @@ const ChatPage = () => {
     const me = await checkUser(user.id);
     const users = await getUsers();
     const rooms = await getRooms(user.id);
-
+    
     dispatch(setName(user.fullName));
     dispatch(setUserName(user.username))
     dispatch(setId(user.id));
@@ -51,6 +51,7 @@ const ChatPage = () => {
       dispatch(setRooms(rooms));
     }
   }
+  
   return (
     <div className="h-screen min-w-[845px] custom-scrollbar">
       <div className="grid grid-cols-5 gap-0">

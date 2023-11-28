@@ -56,10 +56,9 @@ const Room = ({ room, curChat, onClick }) => {
                   })}
           </p>
           <p className="text-[9px] mt-2 text-[#8696A0] mx-1 whitespace-nowrap">
-            {rooms
-              .filter((r) => r.id === room.id)
-              .map((r) => {
-                const lastMessage = r.messages[r.messages.length - 1];
+            {room.messages.length > 0 &&
+              (() => {
+                const lastMessage = room.messages[room.messages.length - 1];
 
                 if (!lastMessage) {
                   return null;
@@ -77,37 +76,40 @@ const Room = ({ room, curChat, onClick }) => {
                 if (luxonMessageTime.hasSame(today, "day")) {
                   formattedDateTime = luxonMessageTime.toFormat("hh:mm a");
                 } else {
-                  formattedDateTime = luxonMessageTime.toFormat("dd-MM-yyy");
+                  formattedDateTime = luxonMessageTime.toFormat("dd-MM-yyyy");
                 }
 
                 return <span key={lastMessage.time}>{formattedDateTime}</span>;
-              })}
+              })()}
           </p>
         </div>
         <div className="text-sm text-[#8696A0] whitespace-nowrap">
-          {rooms
-            .filter((r) => r.id === room.id)
-            .map((r) => {
-              const content = r.messages[r.messages.length - 1]?.content || "";
-              const fromUser = r.messages[r.messages.length - 1]?.from;
+          {room.messages.length > 0 &&
+            (() => {
+              const content =
+                room.messages[room.messages.length - 1]?.content || "";
+              const fromUser = room.messages[room.messages.length - 1]?.from;
               const fromUserName =
                 users.filter((u) => u.id === fromUser).map((u) => u.name) || "";
               const truncatedContent = content.slice(0, 50);
+
               return (
-                <p key={r.id}>
+                <p key={room.id}>
                   <span>
-                    {r.type === "group" &&
+                    {room.type === "group" &&
                       fromUser !== "io" &&
-                      `${fromUserName}:  `}
+                      `${fromUserName}: `}
                   </span>
-                  <span key={r.messages[r.messages.length - 1]?.time || ""}>
+                  <span
+                    key={room.messages[room.messages.length - 1]?.time || ""}
+                  >
                     {truncatedContent.length === content.length
                       ? truncatedContent
                       : `${truncatedContent}...`}
                   </span>
                 </p>
               );
-            })}
+            })()}
         </div>
       </div>
     </div>

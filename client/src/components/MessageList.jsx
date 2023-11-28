@@ -21,7 +21,9 @@ const MessageList = ({ socket }) => {
   const [selectedUsers, setSelectedUsers] = useState([user.id]);
   const [checkboxes, setCheckboxes] = useState({});
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [curCard, setCurCard] = useState("");
+  const [sortedMyRooms, setSortedMyRooms] = useState([]);
 
   const users = useSelector((state) => state.Users.users);
   const myRooms = useSelector((state) => state.User.myrooms);
@@ -29,6 +31,31 @@ const MessageList = ({ socket }) => {
   const curChat = useSelector((state) => state.User.curChat);
   const dispatch = useDispatch();
 
+  useEffect(() => {
+    const myRoomIds = myRooms.map((room) => room.id);
+    const myRoomsWithMessages = rooms.filter((r) => myRoomIds.includes(r.id));
+    const sortedMyRoomsLocal = myRoomsWithMessages.sort((roomA, roomB) => {
+      const messageA =
+        roomA?.messages && roomA.messages.length
+          ? roomA.messages[roomA.messages.length - 1]
+          : null;
+
+      const messageB =
+        roomB?.messages && roomB.messages.length
+          ? roomB.messages[roomB.messages.length - 1]
+          : null;
+
+      if (messageA && messageB) {
+        const timeA = parseInt(messageA.time, 10);
+        const timeB = parseInt(messageB.time, 10);
+
+        return timeB - timeA;
+      }
+
+      return 0;
+    });
+    setSortedMyRooms(sortedMyRoomsLocal);
+  }, [myRooms, rooms]);
   useEffect(() => {
     if (searching) {
       const usersFound = users.filter(
@@ -54,7 +81,6 @@ const MessageList = ({ socket }) => {
             .includes(searchUser.toLowerCase());
         }
       });
-      console.log(roomsFound);
       setFoundRooms(roomsFound);
     }
   }, [searchUser]);
@@ -77,9 +103,8 @@ const MessageList = ({ socket }) => {
       setSelectedUsers([user.id]);
       setSearchUser("");
       setCheckboxes({});
-    }
-    else{
-      setSearchUser("")
+    } else {
+      setSearchUser("");
     }
   }
   function handleUpdatedUser({ id, username, fullName, imageUrl }) {
@@ -101,7 +126,7 @@ const MessageList = ({ socket }) => {
 
       socket.emit("check-room", {
         users: selectedUsers,
-        name: groupInput,
+        groupName: groupInput,
         type: "group",
       });
     } else {
@@ -116,13 +141,18 @@ const MessageList = ({ socket }) => {
   }
   function AddUserToRoom(userid) {
     setSelecting(true);
-    if (selectedUsers.includes(userid)) {
-      setSelectedUsers((prevUsers) => prevUsers.filter((id) => id !== userid));
-      setCheckboxes({ ...checkboxes, [userid]: false });
-    } else {
-      setSelectedUsers((prevUsers) => [...prevUsers, userid]);
-      setCheckboxes({ ...checkboxes, [userid]: true });
-    }
+
+    setSelectedUsers((prevUsers) => {
+      if (prevUsers.includes(userid)) {
+        return prevUsers.filter((id) => id !== userid);
+      } else {
+        return [...prevUsers, userid];
+      }
+    });
+    setCheckboxes((prevCheckboxes) => ({
+      ...prevCheckboxes,
+      [userid]: !prevCheckboxes[userid],
+    }));
   }
   function handlePrivateRoomExists() {
     window.alert("private chat with user already exists");
@@ -152,10 +182,14 @@ const MessageList = ({ socket }) => {
     }
     dispatch(setRoom(foundRoom));
   }
+  function handleRoomClick(room) {
+    dispatch(setCurChat(room.id));
+  }
   const toggleMenu = () => {
     setIsMenuOpen((prev) => !prev);
     setCurCard("");
   };
+
   return (
     <div className="h-screen bg-[#0B141A] flex flex-col text-[#E8ECEE]">
       <div className="h-[50px] bg-[#202C33] flex items-center p-2 flex-none ">
@@ -182,13 +216,13 @@ const MessageList = ({ socket }) => {
                   setIsMenuOpen(false);
                 }}
               >
-                New Group
+                New Chat
               </p>
             </div>
           )}
         </div>
       </div>
-      <div className="bg-[##111B21]">
+      <div className="bg-[#111B21]">
         <SearchInput
           selecting={selecting}
           searchUser={searchUser}
@@ -208,6 +242,7 @@ const MessageList = ({ socket }) => {
                 user={user}
                 index={index}
                 AddUserToRoom={AddUserToRoom}
+                checkboxes={checkboxes}
               />
             ))
           ) : (
@@ -223,7 +258,7 @@ const MessageList = ({ socket }) => {
                 key={index}
                 room={room}
                 curChat={curChat}
-                onClick={() => dispatch(setCurChat(room.id))}
+                onClick={() => handleRoomClick(room)}
               />
             ))
           ) : (
@@ -231,8 +266,8 @@ const MessageList = ({ socket }) => {
               No chats found
             </p>
           )
-        ) : myRooms && myRooms.length > 0 ? (
-          myRooms.map((room, index) => (
+        ) : sortedMyRooms && sortedMyRooms.length > 0 ? (
+          sortedMyRooms.map((room, index) => (
             <Room
               key={index}
               room={room}

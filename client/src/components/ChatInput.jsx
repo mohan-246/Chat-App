@@ -1,5 +1,14 @@
 /* eslint-disable react/prop-types */
-const ChatInput = ({ sendMessage, setMessage, message }) => {
+import {useRef , useEffect} from 'react';
+
+const ChatInput = ({ sendMessage, setMessage, message, curChat }) => {
+  const inputRef = useRef(null)
+  useEffect(() => {
+    // Focus on the input element when the component mounts
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [inputRef, curChat]);
   return (
     <div className="bg-[#202C33] px-2 py-3 flex items-center">
       <input
@@ -13,6 +22,7 @@ const ChatInput = ({ sendMessage, setMessage, message }) => {
             sendMessage();
           }
         }}
+        ref={inputRef}
       />
       <button
         className="mx-1 rounded-md w-[5%] h-5 align-middle bg-contain bg-no-repeat flex items-center justify-center transform rotate-12"

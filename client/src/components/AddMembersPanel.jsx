@@ -52,6 +52,7 @@ const AddMembersPanel = ({
                 user={user}
                 index={index}
                 AddUserToRoom={AddUserToRoom}
+                checkboxes={checkboxes}
               />
               ))
           ) : (

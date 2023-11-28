@@ -11,7 +11,7 @@ const Message = ({ message, handleInfoClick, showInfo, selectedMessage, memoized
     <div
       className={`flex mb-2 mx-1 ${
         message.from === "io"
-          ? "justify-center"
+          ? "justify-center text-center"
           : message.from === user.id
           ? "justify-end"
           : "justify-start"
@@ -78,7 +78,7 @@ const Message = ({ message, handleInfoClick, showInfo, selectedMessage, memoized
           <div className="mt-auto">
             {message.from !== "io" &&
               !(message.time === selectedMessage && showInfo) && (
-                <p className="text-[#869096] text-[8px] mx-1">
+                <p className="text-[#939ea5] text-[10px] mx-1">
                   {DateTime.fromMillis(parseInt(message.time), {
                     zone: "Asia/Kolkata",
                   }).toFormat("hh:mm a")}

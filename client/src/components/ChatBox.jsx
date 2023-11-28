@@ -219,6 +219,7 @@ const ChatBox = ({ socket }) => {
               setCheckboxes={setCheckboxes}
               memoizedRoom={memoizedRoom}
               searchOnClick={searchOnClick}
+              
             />
           )}
 
@@ -227,6 +228,7 @@ const ChatBox = ({ socket }) => {
               sendMessage={sendMessage}
               setMessage={setMessage}
               message={message}
+              curChat={curChat}
             />
           )}
         </div>

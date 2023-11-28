@@ -131,7 +131,7 @@ io.on("connection", (socket) => {
     RoomMap[chatId].push(socket.id);
     socket.join(chatId);
   });
-  socket.on("check-room", async ({ users, name, type }) => {
+  socket.on("check-room", async ({ users, groupName, type }) => {
     if (type == "private") {
       const room = await Rooms.findOne({
         members: {
@@ -140,27 +140,34 @@ io.on("connection", (socket) => {
         },
       });
       if (room) {
-        console.log("private room exists")
+        console.log("private room exists");
         socket.emit("private-room-exists");
       } else {
+       
         const newRoom = new Rooms({
           id: uuidv4(),
           type: type,
           members: users,
-          name: name,
+          name: groupName,
           messages: [],
         });
         saveRoomAndEmit(newRoom, users, UserMap);
       }
     } else {
+      let newRoomId = uuidv4();
+      let message = {
+        from: "io",
+        to: newRoomId,
+        time: String(new Date().getTime()),
+        content: `${name} created group "${groupName}"`,
+      };
       const newRoom = new Rooms({
-        id: uuidv4(),
+        id: newRoomId,
         type: type,
         members: users,
-        name: name,
-        messages: [],
+        name: groupName,
+        messages: [message],
       });
-
       saveRoomAndEmit(newRoom, users, UserMap);
     }
   });
@@ -217,31 +224,30 @@ io.on("connection", (socket) => {
     name = fullName;
 
     const existingUser = await User.findOne({ id: userId });
-    if (existingUser){
-    const shouldUpdateName = existingUser.name !== fullName;
-    const shouldUpdateUsername = existingUser.userName !== username;
-    const shouldUpdateImage = existingUser.image !== imageUrl;
+    if (existingUser) {
+      const shouldUpdateName = existingUser.name !== fullName;
+      const shouldUpdateUsername = existingUser.userName !== username;
+      const shouldUpdateImage = existingUser.image !== imageUrl;
 
-    if (shouldUpdateName || shouldUpdateUsername || shouldUpdateImage) {
-      const updates = {};
+      if (shouldUpdateName || shouldUpdateUsername || shouldUpdateImage) {
+        const updates = {};
 
-      if (shouldUpdateName) {
-        updates.name = fullName;
+        if (shouldUpdateName) {
+          updates.name = fullName;
+        }
+
+        if (shouldUpdateUsername) {
+          updates.userName = username;
+        }
+
+        if (shouldUpdateImage) {
+          updates.image = imageUrl;
+        }
+
+        await User.updateOne({ id: userId }, updates);
+        io.emit("updated-user", { id: userId, fullName, imageUrl, username });
       }
-
-      if (shouldUpdateUsername) {
-        updates.userName = username;
-      }
-
-      if (shouldUpdateImage) {
-        updates.image = imageUrl;
-      }
-
-      await User.updateOne({ id: userId }, updates);
-      io.emit("updated-user", { id: userId, fullName, imageUrl, username });
-    }}
-
-    
+    }
   });
   socket.on("reconnect", (attemptNumber) => {
     console.log(`Reconnected after attempt ${attemptNumber} id ${socket.id}`);

@@ -67,7 +67,7 @@ const ChatHeader = ({ memoizedRoom, leaveRoom , setCurCard }) => {
                   Add Members 
                 </button>
                 <button className="block pt-4 p-2 text-sm hover:bg-[#202C33] hover:text-white hover:rounded-lg px-5 w-full text-start text-md" onClick={leaveRoom}>
-                  Leave Room 
+                  Leave Group 
                 </button>
               </div>
             )}
