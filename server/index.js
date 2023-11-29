@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import express from "express";
 import cors from "cors";
 import { v4 as uuidv4 } from "uuid";
-
+import dotenv from "dotenv";
 const UserSchema = new mongoose.Schema({
   name: String,
   userName: String,
@@ -28,6 +28,8 @@ const Rooms = mongoose.model("Rooms", {
   ],
 });
 
+dotenv.config();
+
 const User = mongoose.model("User", UserSchema);
 
 const UserMap = new Map();
@@ -44,7 +46,17 @@ app.use(
     origin: "http://localhost:5173",
   })
 );
-mongoose.connect("mongodb://127.0.0.1:27017/chatapp");
+
+mongoose.connect(process.env.MONGODB_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => {
+    console.log("Connected to MongoDB Atlas");
+  })
+  .catch((error) => {
+    console.error("Error connecting to MongoDB Atlas:", error);
+  });
 
 async function joinRooms(socket, userId) {
   const user = await User.findOne({ id: userId }).populate("rooms");
@@ -60,7 +72,6 @@ async function joinRooms(socket, userId) {
     }
   }
 }
-
 async function leaveRooms(socket, userId) {
   const user = await User.findOne({ id: userId }).populate("rooms");
 
@@ -74,7 +85,6 @@ async function leaveRooms(socket, userId) {
     }
   }
 }
-
 async function saveRoomAndEmit(newRoom, users, UserMap, io) {
   try {
     await newRoom.save();
@@ -111,7 +121,6 @@ io.on("connection", (socket) => {
       image: image,
       rooms: [],
     });
-
     await newUser.save();
   });
   socket.on("join-chat", async (chatId) => {
@@ -143,7 +152,6 @@ io.on("connection", (socket) => {
         console.log("private room exists");
         socket.emit("private-room-exists");
       } else {
-       
         const newRoom = new Rooms({
           id: uuidv4(),
           type: type,
@@ -259,27 +267,32 @@ io.on("connection", (socket) => {
 });
 
 app.get("/api/user/:userId", async (req, res) => {
-  const userId = req.params.userId;
-  const user = await User.findOne({ id: userId });
+  try {
+    const userId = req.params.userId;
+    const user = await User.findOne({ id: userId });
 
-  if (!user) {
-    return res.status(404).json({ message: "No user found" });
-  }
-
-  const userrooms = [];
-  for (const roomid of user.rooms) {
-    const room = await Rooms.findOne({ _id: roomid });
-    if (room) {
-      userrooms.push({
-        id: room.id,
-        name: room.name,
-        members: room.members,
-        type: room.type,
-      });
+    if (!user) {
+      return res.status(404).json({ message: "No user found" });
     }
-  }
 
-  return res.json({ userr: user, userrooms: userrooms });
+    const userrooms = [];
+    for (const roomid of user.rooms) {
+      const room = await Rooms.findOne({ _id: roomid });
+      if (room) {
+        userrooms.push({
+          id: room.id,
+          name: room.name,
+          members: room.members,
+          type: room.type,
+        });
+      }
+    }
+
+    return res.json({ userr: user, userrooms: userrooms });
+  } catch (error) {
+    console.error("Error in /api/user/:userId route:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 app.get("/api/users", async (req, res) => {

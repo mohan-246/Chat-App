@@ -16,7 +16,7 @@ const FoundUser = ({ user, index, AddUserToRoom, checkboxes }) => (
         type="checkbox"
         className="h-4 w-4 border-gray-400 rounded-full mr-1"
         onChange={() => AddUserToRoom(user.id)}
-        checked={checkboxes[user.id]}
+        checked={checkboxes[user.id] || false}
       />
     </label>
   </div>

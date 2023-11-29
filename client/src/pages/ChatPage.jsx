@@ -30,7 +30,6 @@ const ChatPage = () => {
     socket.emit("user-change",{fullName : user.fullName, imageUrl : user.imageUrl, username : user.username})
   }
   async function fetchData() {
-    console.log(user)
     const me = await checkUser(user.id);
     const users = await getUsers();
     const rooms = await getRooms(user.id);
