@@ -1,9 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-
 const initialState = {
   id: null,
   name: null,
+  userName: null,
+  image: null,
   curChat: null,
   myrooms: [],
 };
@@ -17,6 +18,12 @@ const userSlice = createSlice({
     },
     setName: (state, action) => {
       state.name = action.payload;
+    },
+    setUserName: (state, action) => {
+      state.userName = action.payload;
+    },
+    setImage: (state, action) => {
+      state.image = action.payload;
     },
     setCurChat: (state, action) => {
       state.curChat = action.payload;
@@ -33,13 +40,21 @@ const userSlice = createSlice({
     },
     leaveRoom: (state, action) => {
       state.myrooms = state.myrooms.filter(
-        (room) => room.id !== action.payload
+        (room) => room.id !== action.payload.roomid
       );
     },
   },
 });
 
-export const { setId, setName, setMyRooms, leaveRoom , joinRoom, setCurChat } =
-  userSlice.actions;
+export const {
+  setId,
+  setName,
+  setMyRooms,
+  leaveRoom,
+  joinRoom,
+  setUserName,
+  setImage,
+  setCurChat,
+} = userSlice.actions;
 
 export default userSlice.reducer;

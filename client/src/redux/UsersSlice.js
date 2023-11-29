@@ -24,9 +24,21 @@ const usersSlice = createSlice({
         return user;
       });
     },
+    updateUser: (state, action) => {
+      const { id, username, fullName, imageUrl } = action.payload;
+      const userToUpdate = state.users.find((user) => user.id === id);
+
+      if (userToUpdate) {
+        userToUpdate.userName = username;
+        userToUpdate.name = fullName;
+        userToUpdate.image = imageUrl;
+      } else {
+        console.log("User not found");
+      }
+    },
   },
 });
 
-export const { setUsers, addUser, removeUserRoom } = usersSlice.actions;
+export const { setUsers, addUser, removeUserRoom , updateUser } = usersSlice.actions;
 
 export default usersSlice.reducer;
