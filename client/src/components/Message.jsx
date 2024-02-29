@@ -1,7 +1,9 @@
-import React from "react";
+/* eslint-disable react/prop-types */
+import { useEffect, useState } from "react";
 import { DateTime } from "luxon";
 import { useSelector } from "react-redux";
 import { useUser } from "@clerk/clerk-react";
+import { decryptMessage } from "../functions/encrypt";
 
 const Message = ({
   message,
@@ -12,7 +14,20 @@ const Message = ({
 }) => {
   const users = useSelector((state) => state.Users.users);
   const { user } = useUser();
+  const [decryptedMessage , setDecryptedMessage] = useState('')
+  useEffect(() => {
+    async function decryptContent() {
+      try {
+        const decryptedContent = await decryptMessage(message.content, memoizedRoom.privateKey);
+        setDecryptedMessage(decryptedContent);
+      } catch (error) {
+        console.error('Error decrypting message:', error);
+      }
+    }
 
+    decryptContent();
+
+  }, [message.content, memoizedRoom.privateKey]);
   return (
     <div
       className={`flex mb-2 mx-1 ${
@@ -43,7 +58,7 @@ const Message = ({
         }`}
         onClick={() => handleInfoClick(message.time)}
       >
-        <p className="text-[10px]  text-[#A5B337] capitalize">
+        <p className="text-[10px] max-w-[80%] text-[#A5B337] capitalize">
           {users
             .filter(
               (u) =>
@@ -62,7 +77,7 @@ const Message = ({
                 message.from == "io"
                   ? "text-[#8696A0] text-sm"
                   : "text-[#E4E8EB]"
-              }`}
+              } whitespace-normal`}
             >
               {showInfo &&
               message.time === selectedMessage &&
@@ -83,7 +98,9 @@ const Message = ({
                   </span>
                 </>
               ) : (
-                message.content
+                <span>
+                  {decryptedMessage}
+                </span>
               )}
             </p>
           </div>

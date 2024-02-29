@@ -79,7 +79,7 @@ const ChatBox = ({ socket }) => {
     };
     socket.emit("send-message", messageWithId);
     setMessage("");
-    dispatch(addMessageToRoom(messageWithId));
+    // dispatch(addMessageToRoom(messageWithId));
   }
   const sendIoMessage = (ioMessage) => {
     const messageWithId = {
@@ -147,7 +147,7 @@ const ChatBox = ({ socket }) => {
   }
 
   return (
-    <div className="h-screen flex flex-col ">
+    <div className="h-screen w-full flex flex-col ">
       {curChat ? (
         <div className="h-screen flex flex-col">
           <ChatHeader
@@ -158,7 +158,7 @@ const ChatBox = ({ socket }) => {
             setIsMenuOpen={setIsMenuOpen}
           />
           <div
-            className="bg-[#0B141A] flex-1 overflow-y-auto custom-scrollbar-2"
+            className="bg-[#0B141A] flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar-2"
             id="chatbox"
           >
             {curCard === "showMembers" && (

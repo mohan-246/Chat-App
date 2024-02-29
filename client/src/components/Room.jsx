@@ -1,14 +1,32 @@
+/* eslint-disable react/prop-types */
 // Room.js
-import React from "react";
+import {useEffect , useState} from "react";
 import { useSelector } from "react-redux";
 import { DateTime } from "luxon";
+import { decryptMessage } from "../functions/encrypt";
 import { useUser } from "@clerk/clerk-react";
 
 const Room = ({ room, curChat, onClick }) => {
   const users = useSelector((state) => state.Users.users);
   const rooms = useSelector((state) => state.Room.rooms);
+  const [decryptedMessage , setDecryptedMessage] = useState('')
+  let RoomLength = room.messages.length;
   const { user } = useUser();
+  useEffect(() => {
+    async function decryptContent() {
+      try {
+        RoomLength = room.messages.length;
+        const lastMessage = room.messages[RoomLength - 1]?.content || ""
+        const decryptedContent = await decryptMessage(lastMessage, room.privateKey);
+        setDecryptedMessage(decryptedContent);
+      } catch (error) {
+        console.error('Error decrypting message:', error);
+      }
+    }
 
+    decryptContent();
+
+  }, [room]);
   return (
     <div
       className={`flex items-center gap-2 border-[#0B141A] border-b px-2 hover:bg-[#202C33] ${
@@ -56,9 +74,9 @@ const Room = ({ room, curChat, onClick }) => {
                   })}
           </p>
           <p className="text-[9px] mt-2 text-[#8696A0] mx-1 whitespace-nowrap">
-            {room.messages.length > 0 &&
+            {RoomLength > 0 &&
               (() => {
-                const lastMessage = room.messages[room.messages.length - 1];
+                const lastMessage = room.messages[RoomLength - 1];
 
                 if (!lastMessage) {
                   return null;
@@ -84,11 +102,10 @@ const Room = ({ room, curChat, onClick }) => {
           </p>
         </div>
         <div className="text-sm text-[#8696A0] whitespace-nowrap">
-          {room.messages.length > 0 &&
+          {RoomLength > 0 &&
             (() => {
-              const content =
-                room.messages[room.messages.length - 1]?.content || "";
-              const fromUser = room.messages[room.messages.length - 1]?.from;
+              const content = decryptedMessage;
+              const fromUser = room.messages[RoomLength - 1]?.from;
               const fromUserName =
                 users.filter((u) => u.id === fromUser).map((u) => u.name) || "";
               const truncatedContent = content.slice(0, 50);
@@ -101,7 +118,7 @@ const Room = ({ room, curChat, onClick }) => {
                       `${fromUserName}: `}
                   </span>
                   <span
-                    key={room.messages[room.messages.length - 1]?.time || ""}
+                    key={room.messages[RoomLength - 1]?.time || ""}
                   >
                     {truncatedContent.length === content.length
                       ? truncatedContent
