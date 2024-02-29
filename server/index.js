@@ -2,7 +2,8 @@ import http from "http";
 import { Server } from "socket.io";
 import mongoose from "mongoose";
 import express from "express";
-import cors from "cors";
+import cors from "cors"; 
+import crypto from 'crypto';
 import { v4 as uuidv4 } from "uuid";
 
 const UserSchema = new mongoose.Schema({
@@ -17,6 +18,8 @@ const Rooms = mongoose.model("Rooms", {
   id: String,
   type: String,
   name: String,
+  publicKey: String,
+  privateKey: String,
   members: [String],
   messages: [
     {
@@ -94,6 +97,28 @@ async function saveRoomAndEmit(newRoom, users, UserMap, io) {
     console.log("Error while saving and emitting room:", error);
   }
 }
+function generateRandomKeyPair(){
+const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  publicKeyEncoding: {
+    type: 'spki',
+    format: 'pem'
+  },
+  privateKeyEncoding: {
+    type: 'pkcs8',
+    format: 'pem'
+  }
+});
+return [publicKey , privateKey]
+}
+
+ 
+function encryptData(data , publicKey) {
+  return crypto.publicEncrypt(publicKey, Buffer.from(data)).toString('base64');
+}
+function decryptData(encryptedData , privateKey) {
+  return crypto.privateDecrypt(privateKey, Buffer.from(encryptedData, 'base64')).toString();
+}
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
@@ -143,11 +168,13 @@ io.on("connection", (socket) => {
         console.log("private room exists");
         socket.emit("private-room-exists");
       } else {
-       
+        const [senderPublicKey , recipientPrivateKey] = generateRandomKeyPair(); 
         const newRoom = new Rooms({
           id: uuidv4(),
           type: type,
           members: users,
+          publicKey: senderPublicKey, //room to improve
+          privateKey: recipientPrivateKey,
           name: groupName,
           messages: [],
         });
@@ -155,6 +182,7 @@ io.on("connection", (socket) => {
       }
     } else {
       let newRoomId = uuidv4();
+      const [senderPublicKey , recipientPrivateKey] = generateRandomKeyPair(); 
       let message = {
         from: "io",
         to: newRoomId,
@@ -165,6 +193,8 @@ io.on("connection", (socket) => {
         id: newRoomId,
         type: type,
         members: users,
+        publicKey: senderPublicKey, //room to improve
+        privateKey: recipientPrivateKey,
         name: groupName,
         messages: [message],
       });
@@ -177,9 +207,12 @@ io.on("connection", (socket) => {
       if (!room) {
         return;
       }
-      room.messages.push(message);
+      const encryptedData = encryptData(message.content , room.publicKey);
+      const encryptedMessage = {...message , content: encryptedData}
+      room.messages.push(encryptedMessage);
+      // const decryptedData = decryptData(encryptedData , room.privateKey);
       await room.save();
-      io.to(room.id).emit("sent-message", message);
+      io.to(room.id).emit("sent-message", encryptedMessage);
     } catch (error) {
       console.log("Error sending message:", error);
     }
