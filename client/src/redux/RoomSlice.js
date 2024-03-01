@@ -13,7 +13,7 @@ const roomSlice = createSlice({
     },
 
     addRoom: (state, action) => {
-      const { id, name, members, messages, type } = action.payload;
+      const { id, name, members, messages, type, publicKey, privateKey , hybridKey } = action.payload;
 
       const roomIndex = state.rooms.findIndex((room) => room.id == id);
       if (roomIndex === -1) {
@@ -21,6 +21,9 @@ const roomSlice = createSlice({
           id,
           name,
           members,
+          hybridKey,
+          publicKey,
+          privateKey,
           messages,
           type,
         });
@@ -44,22 +47,30 @@ const roomSlice = createSlice({
       }
     },
     removeUserFromRoom: (state, action) => {
-     
-      const roomIndex = state.rooms.findIndex(
-        (room) => room._id === action.payload.roomId
-      );
+      const { room } = action.payload;
+      const roomIndex = state.rooms.findIndex((r) => r.id == room);
 
       if (roomIndex !== -1) {
-        
-        state.rooms[roomIndex].members = state.rooms[roomIndex].members.filter(
-          (member) => member._id !== action.payload.userId
+        state.rooms = state.rooms.map((r, index) =>
+          index === roomIndex ? { ...r, members: action.payload.members } : r
         );
+      } else {
+        console.log("Room not found");
       }
     },
+    setRoom: (state , action)=>{
+      const foundRoom  = action.payload;
+      const roomIndex = state.rooms.findIndex((r) => r.id == foundRoom.id);
+      if (roomIndex !== -1) {
+        state.rooms[roomIndex] = foundRoom
+      } else {
+        state.rooms.push(foundRoom)
+      }
+    }
   },
 });
 
-export const { setRooms, addRoom, addMessageToRoom, removeUserFromRoom } =
+export const { setRooms, addRoom, addMessageToRoom, removeUserFromRoom, setRoom } =
   roomSlice.actions;
 
 export default roomSlice.reducer;

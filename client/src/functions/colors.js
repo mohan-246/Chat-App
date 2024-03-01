@@ -1,0 +1,7 @@
+export const myMessageColor = '#FF4A09'
+export const othersMessageColor = '#e6e6e6ff'
+export const chatBackground = '#f5f5f5ff' 
+export const secondaryBackground = '#edededff'
+export const ioMessageOutline = '#d9d9d9ff'
+export const userName= '#7d7d8aff'
+export const normalText = '#080808ff'

@@ -1,11 +1,16 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/prop-types */
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addMessageToRoom, removeUserFromRoom } from "../redux/RoomSlice";
-import { removeUserRoom } from "../redux/UsersSlice";
 import { leaveRoom, setCurChat } from "../redux/UserSlice";
 import { useUser } from "@clerk/clerk-react";
 import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
+import AddMembersPanel from "./AddMembersPanel";
+import Message from "./Message";
+import * as colors from "../functions/colors";
+import ShowMembers from "./ShowMembers";
 
 const ChatBox = ({ socket }) => {
   const dispatch = useDispatch();
@@ -13,49 +18,59 @@ const ChatBox = ({ socket }) => {
   const curChat = useSelector((state) => state.User.curChat);
   const rooms = useSelector((state) => state.Room.rooms);
   const users = useSelector((state) => state.Users.users);
-  const [showMembers, setShowMembers] = useState(false);
-  const [message, setMessage] = useState("");
-  const FinalRef = useRef();
   const myRooms = useSelector((state) => state.User.myrooms);
-
+  const FinalRef = useRef();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchUser, setSearchUser] = useState("");
+  const [foundUsers, setFoundUsers] = useState([]);
+  const [selecting, setSelecting] = useState(false);
+  const [checkboxes, setCheckboxes] = useState({});
+  const [curCard, setCurCard] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [message, setMessage] = useState("");
+  const [showInfo, setShowInfo] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState(null);
   const memoizedRoom = useMemo(
     () => rooms.find((room) => room.id === curChat),
     [rooms, curChat]
   );
 
   useEffect(() => {
-    scrollToBottom();
-    // console.log(rooms, "m", myRooms, "u", users);
-  }, [curChat, rooms, myRooms, users]);
-
-  useEffect(() => {
     socket.on("sent-message", handleSentMessage);
-    // socket.on("left-room", handleLeftRoom);
+    socket.on("left-room", handleLeftRoom);
 
     return () => {
       socket.off("sent-message", handleSentMessage);
-      // socket.off("left-room", handleLeftRoom);
+      socket.off("left-room", handleLeftRoom);
     };
   }, [socket]);
-  function handleLeftRoom({ user, room }) {
-    const foundUser = users.find((u) => u.id === user);
-    if (foundUser) {
-      const message = `${foundUser.name} has left the chat`;
-      sendIoMessage(message);
-    } else {
-      console.error(`User with ID ${user} not found.`);
-    }
+  useEffect(() => {
     setTimeout(() => {
-      console.log(users, rooms);
-    }, 1000);
-  }
+      scrollToBottom();
+    }, 50);
+  }, [curChat, memoizedRoom]);
+  useEffect(() => {
+    setCurCard("")
+    setIsMenuOpen(false)
+  },[curChat])
+  useEffect(() => {
+    const usersFound = users.filter(
+      (foundUser) =>
+        foundUser.userName.toLowerCase().includes(searchUser.toLowerCase()) &&
+        foundUser.id != user.id
+    );
+    setFoundUsers(usersFound);
+  }, [searchUser]);
 
-  function handleSentMessage(message) {
+  const handleLeftRoom = ({ user, room, members }) => {
+    dispatch(removeUserFromRoom({ user, room, members }));
+    setCurChat(curChat);
+  }
+  const handleSentMessage = (message) => {
     dispatch(addMessageToRoom(message));
     scrollToBottom();
   }
-
-  function sendMessage() {
+  const sendMessage = () => {
     if (message.trim() === "") {
       return;
     }
@@ -67,9 +82,9 @@ const ChatBox = ({ socket }) => {
     };
     socket.emit("send-message", messageWithId);
     setMessage("");
-    dispatch(addMessageToRoom(messageWithId));
+    // dispatch(addMessageToRoom(messageWithId));
   }
-  function sendIoMessage(ioMessage) {
+  const sendIoMessage = (ioMessage) => {
     const messageWithId = {
       from: "io",
       to: curChat,
@@ -79,7 +94,7 @@ const ChatBox = ({ socket }) => {
     socket.emit("send-message", messageWithId);
     dispatch(addMessageToRoom(messageWithId));
   }
-  function scrollToBottom() {
+  const scrollToBottom = () => {
     if (FinalRef.current) {
       const container = FinalRef.current.parentElement;
       const scrollThreshold = 150;
@@ -94,100 +109,132 @@ const ChatBox = ({ socket }) => {
       }
     }
   }
-  function handleInfoClick() {
-    setShowMembers(true);
-  }
-
-  function handleCloseMembers() {
-    setShowMembers(false);
-  }
-  function handleLeaveRoom() {
+  const handleLeaveRoom = () => {
     const foundRoom = rooms.find((r) => r.id === curChat);
 
     if (foundRoom) {
       socket.emit("leave-room", { user: user.id, room: curChat });
-      sendIoMessage(`${user.name} has left the chat`)
-      dispatch(removeUserRoom({ user: user.id, foundRoom }));
-      dispatch(removeUserFromRoom({ roomId: foundRoom._id, userId: user.id }));
-      dispatch(leaveRoom({ room: curChat }));
-      dispatch(setCurChat(null))
-      
+      sendIoMessage(`${user.fullName} left`);
+      dispatch(leaveRoom({ roomid: curChat }));
+      dispatch(setCurChat(null));
     } else {
       console.error(`Room with ID ${curChat} not found.`);
     }
   }
+  const AddMembersToRoom = () => {
+    if (selectedUsers.length == 0) {
+      window.alert("Please select atleast one user");
+      return;
+    }
+    const selectedUserNames = users
+      .filter((user) => selectedUsers.includes(user.id))
+      .map((user) => user.name);
+    sendIoMessage(`${user.fullName} added ${selectedUserNames}`);
+    socket.emit("add-members", { users: selectedUsers, room: curChat });
+    setSelecting(false);
+    setSelectedUsers([]);
+    setSearchUser("");
+    setCurCard("");
+    setCheckboxes({});
+  }
+  const searchOnClick = () => {
+    setSelecting(false);
+    setSelectedUsers([]);
+    setSearchUser("");
+    setCurCard("");
+    setCheckboxes({});
+  }
+  const handleMessageInfoClick = (message) => {
+    setShowInfo((prev) => !prev);
+    setSelectedMessage(message);
+  }
+
   return (
-    <div className="h-screen flex flex-col">
-      <ChatHeader
-        handleInfoClick={handleInfoClick}
-        memoizedRoom={memoizedRoom}
-        leaveRoom={handleLeaveRoom}
-      />
-      <div className="bg-indigo-50 flex-1 overflow-y-auto" id="chatbox">
-        {showMembers && (
-          <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-indigo-50 p-4 rounded">
-              <h2 className="text-lg font-bold mb-2">Room Members</h2>
-              <ul>
-                {memoizedRoom.members.map((memberId) => {
-                  const member = users.find((u) => u.id === memberId);
-                  return (
-                    <li key={memberId} className="mb-1">
-                      {member ? member.name : "Unknown User"}
-                    </li>
-                  );
-                })}
-              </ul>
-              <button
-                className="bg-indigo-300 py-2 px-4 rounded mt-4"
-                onClick={handleCloseMembers}
-              >
-                Close
-              </button>
+    <div className="h-screen w-full bg-[#edededff]  flex flex-col ">
+      {curChat ? (
+        <div className="h-screen flex flex-col">
+          <ChatHeader
+            memoizedRoom={memoizedRoom}
+            leaveRoom={handleLeaveRoom}
+            setCurCard={setCurCard}
+            isMenuOpen={isMenuOpen}
+            setIsMenuOpen={setIsMenuOpen}
+          />
+          <div
+            className={`bg-[#f5f5f5ff] py-2 rounded-xl mr-2 flex-1 overflow-y-auto custom-scrollbar-2`}
+            id="chatbox"
+          >
+            {curCard === "showMembers" && (
+              <ShowMembers
+                setCurCard={setCurCard}
+                memoizedRoom={memoizedRoom}
+                users={users}
+              />
+            )}
+
+            <div>
+              {memoizedRoom &&
+                memoizedRoom.messages.map((message , index) => {
+                  let prevMessage = null;
+                  let nextMessage = null;
+
+                  if (index > 0) {
+                    prevMessage = memoizedRoom.messages[index - 1].from;
+                  }
+
+                  if (index < memoizedRoom.messages.length - 1) {
+                    nextMessage = memoizedRoom.messages[index + 1].from;
+                  }
+               
+                  return (<Message
+                    key={message.time}
+                    message={message}
+                    handleInfoClick={handleMessageInfoClick}
+                    prevMessage={prevMessage}
+                    nextMessage={nextMessage}
+                    showInfo={showInfo}
+                    selectedMessage={selectedMessage}
+                    memoizedRoom={memoizedRoom}
+                  />)
+                  
+              })}
             </div>
+
+            <p ref={FinalRef}></p>
           </div>
-        )}
+          {memoizedRoom && curCard == "addingMembers" && (
+            <AddMembersPanel
+              searchUser={searchUser}
+              setSearchUser={setSearchUser}
+              selecting={selecting}
+              setSelecting={setSelecting}
+              foundUsers={foundUsers}
+              selectedUsers={selectedUsers}
+              setSelectedUsers={setSelectedUsers}
+              AddMembersToRoom={AddMembersToRoom}
+              checkboxes={checkboxes}
+              setCheckboxes={setCheckboxes}
+              memoizedRoom={memoizedRoom}
+              searchOnClick={searchOnClick}
+            />
+          )}
 
-        <div>
-          {memoizedRoom &&
-            memoizedRoom.messages.map((message) => (
-              <div
-                key={message.time}
-                className={`flex mb-2 mx-1 ${
-                  message.from === user.id ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`rounded-lg inline-block m-1 p-2 max-w-[80%] ${
-                    message.from === user.id ? "bg-indigo-200" : "bg-indigo-100"
-                  }`}
-                >
-                  <p className="text-[10px] opacity-80 capitalize">
-                    {users
-                      .filter(
-                        (u) =>
-                          u.id === message.from &&
-                          u.id != user.id &&
-                          memoizedRoom.members.length > 2
-                      )
-                      .map((u) => (
-                        <span key={u.id}>{u.name}</span>
-                      ))}
-                  </p>
-                  <p>{message.content}</p>
-                </div>
-              </div>
-            ))}
+          {curChat && (
+            <ChatInput
+              sendMessage={sendMessage}
+              setMessage={setMessage}
+              message={message}
+              curChat={curChat}
+            />
+          )}
         </div>
-
-        <p ref={FinalRef}></p>
-      </div>
-
-      <ChatInput
-        sendMessage={sendMessage}
-        setMessage={setMessage}
-        message={message}
-      />
+      ) : (
+        <div className="bg-[#edededff] w-full h-full flex items-center justify-center text-center">
+          <p className="text-xl max-w-[50%] font-mono text-[#080808ff] font-semibold uppercase">
+            Join a room or select a room to start chatting
+          </p>
+        </div>
+      )}
     </div>
   );
 };
