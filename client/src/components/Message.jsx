@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import { DateTime } from "luxon";
 import { useSelector } from "react-redux";
 import { useUser } from "@clerk/clerk-react";
-import { decryptMessage } from "../functions/encrypt";
+import {
+  decryptMessage,
+  decryptDataWithSymmetricKey,
+} from "../functions/encrypt";
 
 const Message = ({
   message,
@@ -14,19 +17,35 @@ const Message = ({
 }) => {
   const users = useSelector((state) => state.Users.users);
   const { user } = useUser();
-  const [decryptedMessage , setDecryptedMessage] = useState('')
+  const [decryptedMessage, setDecryptedMessage] = useState("");
   useEffect(() => {
     async function decryptContent() {
       try {
-        const decryptedContent = await decryptMessage(message.content, memoizedRoom.privateKey);
-        setDecryptedMessage(decryptedContent);
+        if (message.from === "io") {
+          setDecryptedMessage(message.content);
+        } else {
+          const Decrypter = import.meta.env.VITE_DECRYPT_KEY;
+          const decryptedHybridKey = await decryptMessage(
+            memoizedRoom.hybridKey,
+            Decrypter
+          );
+          const DecryptedKey = decryptDataWithSymmetricKey(
+            memoizedRoom.privateKey.encryptedData,
+            decryptedHybridKey,
+            memoizedRoom.privateKey.iv
+          );
+          const decryptedContent = await decryptMessage(
+            message.content,
+            DecryptedKey
+          );
+          setDecryptedMessage(decryptedContent);
+        }
       } catch (error) {
-        console.error('Error decrypting message:', error);
+        console.error("Error decrypting message:", error);
       }
     }
 
     decryptContent();
-
   }, [message.content, memoizedRoom.privateKey]);
   return (
     <div
@@ -56,7 +75,7 @@ const Message = ({
             ? "bg-[#005C4B] hover:bg-[#126350] "
             : "bg-[#202C33] hover:bg-[#283740]"
         }`}
-        onClick={() => handleInfoClick(message.time)}
+        // onClick={() => handleInfoClick(message.time)}
       >
         <p className="text-[10px] max-w-[80%] text-[#A5B337] capitalize">
           {users
@@ -98,9 +117,7 @@ const Message = ({
                   </span>
                 </>
               ) : (
-                <span>
-                  {decryptedMessage}
-                </span>
+                <span>{decryptedMessage}</span>
               )}
             </p>
           </div>

@@ -3,9 +3,11 @@ import { Server } from "socket.io";
 import mongoose from "mongoose";
 import express from "express";
 import cors from "cors"; 
-import crypto, { publicDecrypt } from 'crypto';
+import crypto from 'crypto';
 import { v4 as uuidv4 } from "uuid";
+import dotenv from 'dotenv';
 
+dotenv.config();
 const UserSchema = new mongoose.Schema({
   name: String,
   userName: String,
@@ -18,8 +20,15 @@ const Rooms = mongoose.model("Rooms", {
   id: String,
   type: String,
   name: String,
-  publicKey: String,
-  privateKey: String,
+  hybridKey: String,
+  publicKey: {
+    iv: String,
+    encryptedData: String
+  },
+  privateKey: {
+    iv: String,
+    encryptedData: String
+  },
   members: [String],
   messages: [
     {
@@ -34,6 +43,8 @@ const Rooms = mongoose.model("Rooms", {
 const User = mongoose.model("User", UserSchema);
 
 const UserMap = new Map();
+const Encrypter = process.env.ENCRYPT_KEY
+const Decrypter = process.env.DECRYPT_KEY
 const RoomMap = {};
 const app = express();
 const server = http.createServer(app);
@@ -112,11 +123,6 @@ const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
 return [publicKey , privateKey]
 }
 
- 
-// function encryptData(data , publicKey) {
-//   return crypto.publicEncrypt(publicKey, Buffer.from(data)).toString('base64');
-// }
-
 function derToArrayBuffer(der) {
   const binaryString = Buffer.from(der, 'base64').toString('binary');
   const len = binaryString.length;
@@ -126,7 +132,6 @@ function derToArrayBuffer(der) {
   }
   return bytes.buffer;
 }
-
 
 const encryptMessage = async (message, publicKeyDER) => {
   const publicKeyArrayBuffer = derToArrayBuffer(publicKeyDER);
@@ -152,9 +157,55 @@ const encryptMessage = async (message, publicKeyDER) => {
 
   return encryptedBase64;
 };
-// function decryptData(encryptedData , privateKey) {
-//   return crypto.privateDecrypt(privateKey, Buffer.from(encryptedData, 'base64')).toString();
-// }
+
+ async function decryptMessage(encryptedBase64, privateKey) { 
+  const encryptedBinaryString = atob(encryptedBase64);
+   
+  const encryptedData = new Uint8Array(encryptedBinaryString.length);
+  for (let i = 0; i < encryptedBinaryString.length; i++) {
+    encryptedData[i] = encryptedBinaryString.charCodeAt(i);
+  }
+  const privateKeyBuffer = derToArrayBuffer(privateKey);
+  const importedPrivateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    privateKeyBuffer,
+    { name: 'RSA-OAEP', hash: { name: 'SHA-256' } },
+    true,
+    ['decrypt']
+  );
+ 
+  const decryptedData = await crypto.subtle.decrypt(
+    { name: 'RSA-OAEP' },
+    importedPrivateKey,
+    encryptedData
+  );
+ 
+  const decryptedMessage = new TextDecoder().decode(decryptedData);
+  
+  return decryptedMessage;
+}
+
+function generateSymmetricKey() {
+  return crypto.randomBytes(32).toString('base64');
+}
+ 
+function encryptDataWithSymmetricKey(data, key) {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key, 'base64'), iv);
+  let encrypted = cipher.update(data, 'utf8', 'base64');
+  encrypted += cipher.final('base64');
+  return {
+    iv: iv.toString('base64'),
+    encryptedData: encrypted
+  };
+}
+
+function decryptDataWithSymmetricKey(encryptedData, key, iv) {
+  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key, 'base64'), Buffer.from(iv, 'base64'));
+  let decrypted = decipher.update(encryptedData, 'base64', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
@@ -205,14 +256,19 @@ io.on("connection", (socket) => {
         socket.emit("private-room-exists");
       } else {
         const [publicKey , privateKey] = generateRandomKeyPair(); 
-        const publicKeyBase64 = publicKey.toString('base64');
-        const privateKeyBase64 = privateKey.toString('base64');
+        const hybridKey = generateSymmetricKey()
+        const publicKeyBase64 =  publicKey.toString('base64');
+        const privateKeyBase64 =  privateKey.toString('base64'); 
+        const publicKeyBase64Encrypted =  encryptDataWithSymmetricKey(publicKeyBase64 , hybridKey)
+        const privateKeyBase64Encrypted =  encryptDataWithSymmetricKey(privateKeyBase64 , hybridKey)
+        const encryptedHybridKey = await encryptMessage(hybridKey, Encrypter)
         const newRoom = new Rooms({
           id: uuidv4(),
           type: type,
           members: users,
-          publicKey: publicKeyBase64, //room to improve
-          privateKey: privateKeyBase64,
+          hybridKey: encryptedHybridKey,
+          publicKey: publicKeyBase64Encrypted, //room to improve
+          privateKey: privateKeyBase64Encrypted,
           name: groupName,
           messages: [],
         });
@@ -221,8 +277,12 @@ io.on("connection", (socket) => {
     } else {
       let newRoomId = uuidv4();
       const [publicKey , privateKey] = generateRandomKeyPair(); 
-      const publicKeyBase64 = publicKey.toString('base64');
-      const privateKeyBase64 = privateKey.toString('base64');
+      const hybridKey = generateSymmetricKey()
+      const publicKeyBase64 =  publicKey.toString('base64');
+        const privateKeyBase64 =  privateKey.toString('base64'); 
+        const publicKeyBase64Encrypted =  encryptDataWithSymmetricKey(publicKeyBase64 , hybridKey)
+        const privateKeyBase64Encrypted =  encryptDataWithSymmetricKey(privateKeyBase64 , hybridKey)
+      const encryptedHybridKey = await encryptMessage(hybridKey, Encrypter)
       let message = {
         from: "io",
         to: newRoomId,
@@ -233,8 +293,9 @@ io.on("connection", (socket) => {
         id: newRoomId,
         type: type,
         members: users,
-        publicKey: publicKeyBase64, //room to improve
-        privateKey: privateKeyBase64,
+        hybridKey: encryptedHybridKey,
+        publicKey: publicKeyBase64Encrypted, //room to improve
+        privateKey: privateKeyBase64Encrypted,
         name: groupName,
         messages: [message],
       });
@@ -247,11 +308,21 @@ io.on("connection", (socket) => {
       if (!room) {
         return;
       }
-      const encryptedData = await encryptMessage(message.content , room.publicKey);
-      const encryptedMessage = {...message , content: encryptedData}
-      room.messages.push(encryptedMessage);
-      await room.save();
-      io.to(room.id).emit("sent-message", encryptedMessage);
+      if(message.from === 'io'){
+        room.messages.push(message);
+        await room.save();
+        io.to(room.id).emit("sent-message", message);
+      }
+      else{
+        const decryptedHybridKey = await decryptMessage(room.hybridKey , Decrypter)
+        const decryptedPublicKey = decryptDataWithSymmetricKey(room.publicKey.encryptedData , decryptedHybridKey , room.publicKey.iv) 
+        const encryptedData = await encryptMessage(message.content , decryptedPublicKey);
+        const encryptedMessage = {...message , content: encryptedData}
+        room.messages.push(encryptedMessage);
+        await room.save();
+        io.to(room.id).emit("sent-message", encryptedMessage);
+      }
+      
     } catch (error) {
       console.log("Error sending message:", error);
     }
@@ -372,16 +443,6 @@ app.get("/api/rooms/:userId", async (req, res) => {
     }
     const roomIds = user.rooms;
     const rooms = await Rooms.find({ _id: { $in: roomIds } });
-    // console.log('d' , rooms.map(r => r.privateKey))
-    // const decryptedRooms = rooms.map(r => {
-    //   const newMessages = r.messages.map(m => {
-    //     // console.log(r.privateKey)
-    //     const newContent = decryptData(m.content, r.privateKey);
-    //     return { ...m, content: newContent };
-    //   });
-    //   return { ...r, messages: newMessages };
-    // });
-    // console.log(decryptedRooms)
     res.json(rooms);
   } catch (error) {
     console.log("Error fetching rooms:", error);

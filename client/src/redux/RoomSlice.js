@@ -13,7 +13,7 @@ const roomSlice = createSlice({
     },
 
     addRoom: (state, action) => {
-      const { id, name, members, messages, type, publicKey, privateKey } = action.payload;
+      const { id, name, members, messages, type, publicKey, privateKey , hybridKey } = action.payload;
 
       const roomIndex = state.rooms.findIndex((room) => room.id == id);
       if (roomIndex === -1) {
@@ -21,6 +21,7 @@ const roomSlice = createSlice({
           id,
           name,
           members,
+          hybridKey,
           publicKey,
           privateKey,
           messages,

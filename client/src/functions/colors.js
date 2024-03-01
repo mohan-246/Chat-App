@@ -1,0 +1,6 @@
+const color1 = '#111B21'
+const color2 = '#E4E8EB'
+const color3 = '#202C33'
+const color4 = '#0B141A'
+const color5 = '#D9E3E4'
+const color6 = '#202C33'
