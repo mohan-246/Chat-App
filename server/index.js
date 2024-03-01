@@ -47,18 +47,22 @@ const Encrypter = process.env.ENCRYPT_KEY
 const Decrypter = process.env.DECRYPT_KEY
 const RoomMap = {};
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
+const server = http.createServer(app,{});
+const io = new Server(server
+  , 
+  {
   cors: {
-    origin: "https://chat-frontend-n5np.onrender.com/",
+    // origin: "https://chat-frontend-n5np.onrender.com/",
+    origin: "*",
   },
-});
-app.use(
-  cors({
-    origin: "https://chat-frontend-n5np.onrender.com/",
-  })
+}
 );
-mongoose.connect(process.env.MONGODB_URL);
+app.use(cors());
+
+console.log(process.env.MONGODB_URL,"h")
+mongoose.connect("mongodb://127.0.0.1:27017/chatapp" ,{
+  useNewUrlParser: true
+});
 
 async function joinRooms(socket, userId) {
   const user = await User.findOne({ id: userId }).populate("rooms");
