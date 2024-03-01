@@ -9,7 +9,7 @@ import {
 } from "../functions/encrypt";
 import { useUser } from "@clerk/clerk-react";
 
-const Room = ({ room, curChat, onClick }) => {
+const Room = ({ room, curChat, onClick , index , length }) => {
   const users = useSelector((state) => state.Users.users);
   // const rooms = useSelector((state) => state.Room.rooms);
   const [decryptedMessage, setDecryptedMessage] = useState("");
@@ -58,9 +58,8 @@ const Room = ({ room, curChat, onClick }) => {
   ]);
   return (
     <div
-      className={`flex items-center gap-2 border-[#0B141A] border-b px-2 hover:bg-[#202C33] ${
-        room.id === curChat ? "bg-[#2A3942]" : "bg-[#111B21]"
-      }`}
+      className={`flex items-center gap-2 border-[#edededff] border-b-2 px-2  hover:bg-[#e6e6e6ff] 
+      ${room.id === curChat ? "bg-[#e6e6e6ff]" : "bg-[#f5f5f5ff]" } ${index == 0 && 'rounded-t-xl'} ${length > 1 && index == length-1 && 'rounded-b-xl' }` }
       onClick={onClick}
     >
       <div>
@@ -86,7 +85,7 @@ const Room = ({ room, curChat, onClick }) => {
             })
         )}
       </div>
-      <div className="flex flex-col h-[63px] text-md w-full overflow-x-clip items-start">
+      <div className="flex flex-col h-[63px] text-md w-full text-[#080808ff] overflow-x-clip items-start">
         <div className="flex justify-between w-full">
           <p className="whitespace-nowrap mt-[6px] ">
             {room.name
@@ -102,7 +101,7 @@ const Room = ({ room, curChat, onClick }) => {
                     );
                   })}
           </p>
-          <p className="text-[9px] mt-2 text-[#8696A0] mx-1 whitespace-nowrap">
+          <p className="text-[9px] mt-2 text-[#7d7d8aff] mx-1 whitespace-nowrap">
             {RoomLength > 0 &&
               (() => {
                 const lastMessage = room.messages[RoomLength - 1];
@@ -130,7 +129,7 @@ const Room = ({ room, curChat, onClick }) => {
               })()}
           </p>
         </div>
-        <div className="text-sm text-[#8696A0] whitespace-nowrap">
+        <div className="text-sm text-[#7d7d8aff] whitespace-nowrap">
           {RoomLength > 0 &&
             (() => {
               const content = decryptedMessage;

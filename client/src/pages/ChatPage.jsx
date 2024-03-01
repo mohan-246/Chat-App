@@ -53,12 +53,12 @@ const ChatPage = () => {
   }
   
   return (
-    <div className="h-screen min-w-[845px] custom-scrollbar">
+    <div className="h-screen min-w-[845px] custom-scrollbar filter invert-1">
       <div className="grid grid-cols-5 gap-0">
         <div className="col-span-2 ">
           <MessageList socket={socket} />
         </div>
-        <div className="col-span-3 border-[#202C33] border-l">
+        <div className="col-span-3 border-[#edededff] border-l">
           <ChatBox socket={socket} />
         </div>
       </div>

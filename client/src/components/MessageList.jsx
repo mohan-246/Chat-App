@@ -8,6 +8,7 @@ import { addRoom, setRoom } from "../redux/RoomSlice";
 import SearchInput from "./SearchInput";
 import { updateUser } from "../redux/UsersSlice";
 import Room from "./Room";
+import { myMessageColor } from "../functions/colors";
 import FoundUser from "./FoundUser";
 
 const MessageList = ({ socket }) => {
@@ -103,7 +104,9 @@ const MessageList = ({ socket }) => {
       setSearchUser("");
       setCheckboxes({});
     } else {
-      setSearchUser("");
+      setSearching(true);
+      setIsMenuOpen(false);
+                 
     }
   };
   const handleUpdatedUser = ({ id, username, fullName, imageUrl }) => {
@@ -190,10 +193,22 @@ const MessageList = ({ socket }) => {
   };
 
   return (
-    <div className="h-screen bg-[#0B141A] flex flex-col text-[#E8ECEE]">
-      <div className="h-[50px] bg-[#202C33] flex items-center p-2 flex-none ">
-      <UserButton className="bg-red-100" />
-        <div className="ml-auto relative">
+    <div className="h-screen bg-[#edededff] flex flex-col text-[#E8ECEE]">
+      <div className="h-[60px] flex items-center mx-2  py-2 bg-[#edededff] justify-evenly flex-none ">
+      <div className="rounded-xl  bg-[#f5f5f5ff] h-[44px] w-full p-2 flex items-center gap-2">
+        <UserButton className="" />
+        <SearchInput
+          selecting={selecting}
+          searchUser={searchUser}
+          setSearchUser={setSearchUser}
+          onClickFunction={CheckAndCreateRoom}
+          placeHolder={"Search or start new chat"}
+          searching={searching}
+          searchOnClick={searchOnClick}
+        />
+      </div>
+      
+        {/* <div className="ml-auto bg-orange-50 relative">
           <button
             className={`text-lg font-bold px-2 text-[#AEBAC1] ml-auto hover:text-white  rounded ${
               !isMenuOpen ? "transform rotate-90" : "mr-2"
@@ -207,9 +222,9 @@ const MessageList = ({ socket }) => {
             />
           </button>
           {isMenuOpen && (
-            <div className="top-[35px] absolute right-0 mt-4 mr-1 bg-[#233138]  whitespace-nowrap text-[#AEBAC1] w-[150px] rounded-lg shadow-lg">
+            <div className="top-[35px] absolute right-0 mt-4 mr-1 bg-[#edededff]  whitespace-nowrap text-[#080808ff] w-[150px] rounded-lg shadow-lg">
               <p
-                className="block pt-4 p-3 text-sm hover:bg-[#233138] hover:text-white hover:rounded-lg px-5 w-full text-start text-md"
+                className="block pt-4 p-3 text-sm hover:bg-[#edededff] hover:text-white hover:rounded-lg px-5 w-full text-start text-md"
                 onClick={() => {
                   setSearching(true);
                   setIsMenuOpen(false);
@@ -219,9 +234,10 @@ const MessageList = ({ socket }) => {
               </p>
             </div>
           )}
-        </div>
+        </div> */}
+        
       </div>
-      <div className="bg-[#111B21]">
+      {/* <div className="bg-[#edededff]">
         <SearchInput
           selecting={selecting}
           searchUser={searchUser}
@@ -231,8 +247,8 @@ const MessageList = ({ socket }) => {
           searching={searching}
           searchOnClick={searchOnClick}
         />
-      </div>
-      <div className="overflow-y-auto custom-scrollbar">
+      </div> */}
+      <div className="overflow-y-auto custom-scrollbar rounded-xl bg-[#f5f5f5ff] mx-2 h-full mb-2">
         {searching ? (
           foundUsers && foundUsers.length > 0 ? (
             foundUsers.map((user, index) => (
@@ -245,7 +261,7 @@ const MessageList = ({ socket }) => {
               />
             ))
           ) : (
-            <p className="h-10 my-1 bg-[#111B21] flex justify-center items-center ">
+            <p className="h-10 my-1 bg-[#f5f5f5ff] text-[#080808ff] flex justify-center items-center ">
               {" "}
               User Not found
             </p>
@@ -256,12 +272,14 @@ const MessageList = ({ socket }) => {
               <Room
                 key={index}
                 room={room}
+                length={foundRooms.length}
+                index={index}
                 curChat={curChat}
                 onClick={() => handleRoomClick(room)}
               />
             ))
           ) : (
-            <p className="h-10 my-1 bg-[#111B21] flex justify-center items-center">
+            <p className="h-10 my-1 bg-[#f5f5f5ff] text-[#080808ff] flex justify-center items-center">
               No chats found
             </p>
           )
@@ -270,12 +288,14 @@ const MessageList = ({ socket }) => {
             <Room
               key={index}
               room={room}
+              length={sortedMyRooms.length}
+              index={index}
               curChat={curChat}
               onClick={() => dispatch(setCurChat(room.id))}
             />
           ))
         ) : (
-          <p className="h-[60px] my-1 rounded bg-[#202C33] flex items-center p-2 ">
+          <p className="h-[60px] my-1 rounded bg-[#f5f5f5ff] text-[#080808ff] flex items-center justify-center p-2 ">
             Join a room to start chatting
           </p>
         )}

@@ -9,6 +9,7 @@ import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import AddMembersPanel from "./AddMembersPanel";
 import Message from "./Message";
+import * as colors from "../functions/colors";
 import ShowMembers from "./ShowMembers";
 
 const ChatBox = ({ socket }) => {
@@ -44,7 +45,9 @@ const ChatBox = ({ socket }) => {
     };
   }, [socket]);
   useEffect(() => {
-    scrollToBottom();
+    setTimeout(() => {
+      scrollToBottom();
+    }, 50);
   }, [curChat, memoizedRoom]);
   useEffect(() => {
     setCurCard("")
@@ -147,7 +150,7 @@ const ChatBox = ({ socket }) => {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col ">
+    <div className="h-screen w-full bg-[#edededff]  flex flex-col ">
       {curChat ? (
         <div className="h-screen flex flex-col">
           <ChatHeader
@@ -158,7 +161,7 @@ const ChatBox = ({ socket }) => {
             setIsMenuOpen={setIsMenuOpen}
           />
           <div
-            className="bg-[#0B141A] flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar-2"
+            className={`bg-[#f5f5f5ff] py-2 rounded-xl mr-2 flex-1 overflow-y-auto custom-scrollbar-2`}
             id="chatbox"
           >
             {curCard === "showMembers" && (
@@ -171,16 +174,30 @@ const ChatBox = ({ socket }) => {
 
             <div>
               {memoizedRoom &&
-                memoizedRoom.messages.map((message) => (
-                  <Message
+                memoizedRoom.messages.map((message , index) => {
+                  let prevMessage = null;
+                  let nextMessage = null;
+
+                  if (index > 0) {
+                    prevMessage = memoizedRoom.messages[index - 1].from;
+                  }
+
+                  if (index < memoizedRoom.messages.length - 1) {
+                    nextMessage = memoizedRoom.messages[index + 1].from;
+                  }
+               
+                  return (<Message
                     key={message.time}
                     message={message}
                     handleInfoClick={handleMessageInfoClick}
+                    prevMessage={prevMessage}
+                    nextMessage={nextMessage}
                     showInfo={showInfo}
                     selectedMessage={selectedMessage}
                     memoizedRoom={memoizedRoom}
-                  />
-                ))}
+                  />)
+                  
+              })}
             </div>
 
             <p ref={FinalRef}></p>
@@ -212,8 +229,8 @@ const ChatBox = ({ socket }) => {
           )}
         </div>
       ) : (
-        <div className="bg-[#0B141A] w-full h-full flex items-center justify-center text-center">
-          <p className="text-xl max-w-[50%] font-mono text-[#D9E3E4] font-semibold uppercase">
+        <div className="bg-[#edededff] w-full h-full flex items-center justify-center text-center">
+          <p className="text-xl max-w-[50%] font-mono text-[#080808ff] font-semibold uppercase">
             Join a room or select a room to start chatting
           </p>
         </div>

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { DateTime } from "luxon";
 import { useSelector } from "react-redux";
 import { useUser } from "@clerk/clerk-react";
+import * as colors from "../functions/colors";
 import {
   decryptMessage,
   decryptDataWithSymmetricKey,
@@ -11,6 +12,8 @@ import {
 const Message = ({
   message,
   handleInfoClick,
+  prevMessage,
+  nextMessage,
   showInfo,
   selectedMessage,
   memoizedRoom,
@@ -49,7 +52,7 @@ const Message = ({
   }, [message.content, memoizedRoom.privateKey]);
   return (
     <div
-      className={`flex mb-2 mx-1 ${
+      className={`flex mb-[1px] mx-1 ${
         message.from === "io"
           ? "justify-center text-center"
           : message.from === user.id
@@ -68,16 +71,16 @@ const Message = ({
           ></img>
         ))}
       <div
-        className={`rounded-lg inline-block m-[6px] p-2 max-w-[80%] ${
+        className={` inline-block max-w-[80%]  ${
           message.from === "io"
-            ? "bg-[#182229] "
+            ? `bg-transparent rounded-full outline-[#d9d9d9ff] mt-2 p-2 outline-[0.5px]  outline`
             : message.from === user.id
-            ? "bg-[#005C4B] hover:bg-[#126350] "
-            : "bg-[#202C33] hover:bg-[#283740]"
+            ? `bg-[#FF4A09] hover:bg-[#FF4A09] rounded-l-[16px] px-4 py-3 ${message.from != prevMessage && 'rounded-tr-[16px]'} ${message.from != nextMessage && 'rounded-br-[16px]'}`
+            : `bg-[#e6e6e6ff] hover:bg-[#e6e6e6ff] rounded-r-[16px] px-4 py-3 ml-2 ${message.from != prevMessage && 'rounded-tl-[16px]'} ${message.from != nextMessage && 'rounded-bl-[16px]'}`
         }`}
         // onClick={() => handleInfoClick(message.time)}
       >
-        <p className="text-[10px] max-w-[80%] text-[#A5B337] capitalize">
+        <p className={`text-[10px] max-w-[80%] text-[#7d7d8aff] capitalize`}>
           {users
             .filter(
               (u) =>
@@ -93,9 +96,10 @@ const Message = ({
           <div>
             <p
               className={`${
-                message.from == "io"
-                  ? "text-[#8696A0] text-sm"
-                  : "text-[#E4E8EB]"
+                message.from == 'io' ? 'text-xs' :
+                message.from === user.id
+                  ? `text-[#f5f5f5ff]`
+                  : `text-[#080808ff]`
               } whitespace-normal`}
             >
               {showInfo &&

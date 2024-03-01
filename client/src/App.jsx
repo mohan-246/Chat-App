@@ -8,7 +8,7 @@ import {
   RedirectToSignIn,
 } from "@clerk/clerk-react";
 import ChatPage from "./pages/ChatPage";
-import { dark } from "@clerk/themes";
+import { light } from "@clerk/themes";
 
 function App() {
   if (!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY) {
@@ -20,7 +20,7 @@ function App() {
     <ClerkProvider
       publishableKey={clerkPubKey}
       appearance={{
-        baseTheme: dark,
+        baseTheme: light,
       }}
     >
       <SignedIn>

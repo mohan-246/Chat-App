@@ -31,7 +31,7 @@ const AddMembersPanel = ({
       className=" absolute top-[55px] shadow-lg h-1/2 w-[300px] ml-[6px] rounded-lg"
       id="add-members-panel"
     >
-      <div className="bg-[#111B21] h-full w-full overflow-auto rounded-lg text-[#E4E8EB]">
+      <div className="bg-[#edededff] h-full w-full overflow-auto rounded-lg text-[#080808ff]">
         {" "}
         <SearchInput
           selecting={selecting}
@@ -56,7 +56,7 @@ const AddMembersPanel = ({
               />
               ))
           ) : (
-            <p className="h-10 my-1  bg-[#202C33] flex justify-center items-center "> User Not found</p>
+            <p className="h-10 my-1  text-[#080808ff] flex justify-center items-center "> User Not found</p>
           )}
         </div>
       </div>
