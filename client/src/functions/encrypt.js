@@ -56,3 +56,25 @@ export function decryptDataWithSymmetricKey(encryptedData, key, iv) {
 
   return decryptedText;
 }
+export async function encryptMessage(message, publicKeyDER) {
+    
+  const publicKeyArrayBuffer = derToArrayBuffer(publicKeyDER);
+  const publicKey = await crypto.subtle.importKey(
+    'spki',
+    publicKeyArrayBuffer,
+    { name: 'RSA-OAEP', hash: { name: 'SHA-256' } },
+    true,
+    ['encrypt']
+  );
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const encryptedData = await crypto.subtle.encrypt(
+    { name: 'RSA-OAEP' },
+    publicKey,
+    data
+  );
+
+  const encryptedBase64 = btoa(String.fromCharCode(...new Uint8Array(encryptedData)));
+
+  return encryptedBase64;
+}

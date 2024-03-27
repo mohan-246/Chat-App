@@ -9,7 +9,7 @@ import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import AddMembersPanel from "./AddMembersPanel";
 import Message from "./Message";
-import * as colors from "../functions/colors";
+import { decryptDataWithSymmetricKey , decryptMessage , encryptMessage } from "../functions/encrypt";
 import ShowMembers from "./ShowMembers";
 
 const ChatBox = ({ socket }) => {
@@ -70,19 +70,30 @@ const ChatBox = ({ socket }) => {
     dispatch(addMessageToRoom(message));
     scrollToBottom();
   }
-  const sendMessage = () => {
-    if (message.trim() === "") {
+  const sendMessage = async() => {
+    if (message.trim() == "") {
       return;
     }
-    const messageWithId = {
-      from: user.id,
-      to: curChat,
-      time: String(new Date().getTime()),
-      content: message,
-    };
-    socket.emit("send-message", messageWithId);
+   
+    try{
+      const Decrypter = import.meta.env.VITE_DECRYPT_KEY;
+      const decryptedHybridKey = await decryptMessage(memoizedRoom.hybridKey , Decrypter)
+      const decryptedPublicKey = decryptDataWithSymmetricKey(memoizedRoom.publicKey.encryptedData , decryptedHybridKey , memoizedRoom.publicKey.iv) 
+      const encryptedData = await encryptMessage(message , decryptedPublicKey);
+      const encryptedMessage = {
+        from: user.id,
+        to: curChat,
+        time: String(new Date().getTime()),
+        content: encryptedData,
+      };
+      socket.emit("send-message", encryptedMessage);
+    }
+    catch(err){
+      console.log("Error while encrypting message ",err)
+    }
+
     setMessage("");
-    // dispatch(addMessageToRoom(messageWithId));
+   
   }
   const sendIoMessage = (ioMessage) => {
     const messageWithId = {

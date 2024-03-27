@@ -59,7 +59,6 @@ const io = new Server(server
 );
 app.use(cors());
 
-console.log(process.env.MONGODB_URL,"h")
 mongoose.connect("mongodb://127.0.0.1:27017/chatapp" ,{
   useNewUrlParser: true
 });
@@ -312,20 +311,11 @@ io.on("connection", (socket) => {
       if (!room) {
         return;
       }
-      if(message.from === 'io'){
+      
         room.messages.push(message);
         await room.save();
         io.to(room.id).emit("sent-message", message);
-      }
-      else{
-        const decryptedHybridKey = await decryptMessage(room.hybridKey , Decrypter)
-        const decryptedPublicKey = decryptDataWithSymmetricKey(room.publicKey.encryptedData , decryptedHybridKey , room.publicKey.iv) 
-        const encryptedData = await encryptMessage(message.content , decryptedPublicKey);
-        const encryptedMessage = {...message , content: encryptedData}
-        room.messages.push(encryptedMessage);
-        await room.save();
-        io.to(room.id).emit("sent-message", encryptedMessage);
-      }
+      
       
     } catch (error) {
       console.log("Error sending message:", error);
@@ -438,7 +428,9 @@ app.get("/api/users", async (req, res) => {
 });
 
 app.get("/api/rooms/:userId", async (req, res) => {
+  
   const userId = req.params.userId;
+  
   try {
     const user = await User.findOne({ id: userId });
 

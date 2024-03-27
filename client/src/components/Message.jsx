@@ -11,7 +11,7 @@ import {
 
 const Message = ({
   message,
-  handleInfoClick,
+  // handleInfoClick,
   prevMessage,
   nextMessage,
   showInfo,
@@ -66,7 +66,7 @@ const Message = ({
           <img
             key={u.id}
             src={u.image}
-            className="h-8 w-8 rounded-full m-[1px] mt-2"
+            className={`h-8 w-8 rounded-full m-[1px] mt-2 ${message.from == prevMessage && "opacity-0"}`}
             alt={`Profile of ${u.userName}`}
           ></img>
         ))}
@@ -75,8 +75,8 @@ const Message = ({
           message.from === "io"
             ? `bg-transparent rounded-full outline-[#d9d9d9ff] mt-2 p-2 outline-[0.5px]  outline`
             : message.from === user.id
-            ? `bg-[#FF4A09] hover:bg-[#FF4A09] rounded-l-[16px] px-4 py-3 ${message.from != prevMessage && 'rounded-tr-[16px]'} ${message.from != nextMessage && 'rounded-br-[16px]'}`
-            : `bg-[#e6e6e6ff] hover:bg-[#e6e6e6ff] rounded-r-[16px] px-4 py-3 ml-2 ${message.from != prevMessage && 'rounded-tl-[16px]'} ${message.from != nextMessage && 'rounded-bl-[16px]'}`
+            ? `bg-[#FF4A09] hover:bg-[#FF4A09] rounded-l-[16px] px-4 py-3 ${message.from != prevMessage && 'rounded-tr-[16px] mt-2'} ${message.from != nextMessage && 'rounded-br-[16px]'}`
+            : `bg-[#e6e6e6ff] hover:bg-[#e6e6e6ff] rounded-r-[16px] px-4 py-3 ml-2 ${message.from != prevMessage && 'rounded-tl-[16px] mt-2'} ${message.from != nextMessage && 'rounded-bl-[16px]'}`
         }`}
         // onClick={() => handleInfoClick(message.time)}
       >
