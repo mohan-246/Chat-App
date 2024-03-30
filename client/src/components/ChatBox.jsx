@@ -9,7 +9,7 @@ import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import AddMembersPanel from "./AddMembersPanel";
 import Message from "./Message";
-import { decryptDataWithSymmetricKey , decryptMessage , encryptMessage } from "../functions/encrypt";
+import { decryptDataWithSymmetricKey , decryptMessage , encryptMessage , generateSymmetricKey , encryptDataWithSymmetricKey } from "../functions/encrypt";
 import ShowMembers from "./ShowMembers";
 
 const ChatBox = ({ socket }) => {
@@ -19,6 +19,7 @@ const ChatBox = ({ socket }) => {
   const rooms = useSelector((state) => state.Room.rooms);
   const users = useSelector((state) => state.Users.users);
   const myRooms = useSelector((state) => state.User.myrooms);
+  
   const FinalRef = useRef();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchUser, setSearchUser] = useState("");
@@ -76,16 +77,17 @@ const ChatBox = ({ socket }) => {
     }
    
     try{
-      const Decrypter = import.meta.env.VITE_DECRYPT_KEY;
-      const decryptedHybridKey = await decryptMessage(memoizedRoom.hybridKey , Decrypter)
-      const decryptedPublicKey = decryptDataWithSymmetricKey(memoizedRoom.publicKey.encryptedData , decryptedHybridKey , memoizedRoom.publicKey.iv) 
-      const encryptedData = await encryptMessage(message , decryptedPublicKey);
+      const hybridKey = await generateSymmetricKey()
+      const encryptedHybridKey = await encryptMessage(hybridKey, memoizedRoom.publicKey)
+      const encryptedData = await encryptDataWithSymmetricKey(message , hybridKey);
       const encryptedMessage = {
         from: user.id,
         to: curChat,
+        hybridKey: encryptedHybridKey,
         time: String(new Date().getTime()),
         content: encryptedData,
       };
+      
       socket.emit("send-message", encryptedMessage);
     }
     catch(err){
@@ -95,15 +97,25 @@ const ChatBox = ({ socket }) => {
     setMessage("");
    
   }
-  const sendIoMessage = (ioMessage) => {
-    const messageWithId = {
-      from: "io",
-      to: curChat,
-      time: String(new Date().getTime()),
-      content: ioMessage,
-    };
-    socket.emit("send-message", messageWithId);
-    dispatch(addMessageToRoom(messageWithId));
+  const sendIoMessage = async (ioMessage) => {
+    try{
+      const hybridKey = await generateSymmetricKey()
+      const encryptedHybridKey = await encryptMessage(hybridKey, memoizedRoom.publicKey)
+      const encryptedData = await encryptDataWithSymmetricKey(ioMessage , hybridKey);
+      const encryptedMessage = {
+        from: 'io',
+        to: curChat,
+        hybridKey: encryptedHybridKey,
+        time: String(new Date().getTime()),
+        content: encryptedData,
+      };
+      socket.emit("send-message", encryptedMessage);
+      // dispatch(addMessageToRoom(encryptedMessage));
+    }
+    catch(err){
+      console.log("Error while encrypting message ",err)
+    }
+    
   }
   const scrollToBottom = () => {
     if (FinalRef.current) {

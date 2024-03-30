@@ -23,25 +23,22 @@ const Room = ({ room, curChat, onClick , index , length }) => {
         // console.log("L" , RoomLength , 'lm' , lastMessage)
         if (lastMessage == null) {
           setDecryptedMessage("");
-        } else if (lastMessage.from == "io") {
-          setDecryptedMessage(lastMessage.content);
-        } else {
+        } try {
+       
           const Decrypter = import.meta.env.VITE_DECRYPT_KEY;
-          const decryptedHybridKey = await decryptMessage(
-            room.hybridKey,
-            Decrypter
-          );
-          const DecryptedKey = decryptDataWithSymmetricKey(
-            room.privateKey.encryptedData,
+          const decryptedPrivateKey = decryptDataWithSymmetricKey(room.privateKey.encryptedData , Decrypter , room.privateKey.iv)
+          const decryptedHybridKey = await decryptMessage(lastMessage.hybridKey , decryptedPrivateKey)
+          const decryptedMessage = decryptDataWithSymmetricKey(
+            lastMessage.content.encryptedData,
             decryptedHybridKey,
-            room.privateKey.iv
+            lastMessage.content.iv
           );
-          const decryptedContent = await decryptMessage(
-            lastMessage.content,
-            DecryptedKey
-          );
-          setDecryptedMessage(decryptedContent);
-        }
+          
+          setDecryptedMessage(decryptedMessage);
+        
+      } catch (error) {
+        console.error("Error decrypting message:", error);
+      }
         // console.log( lastMessage , 'e\n' ,decryptedMessage)
       } catch (error) {
         console.error("Error decrypting message:", error);

@@ -13,7 +13,7 @@ const roomSlice = createSlice({
     },
 
     addRoom: (state, action) => {
-      const { id, name, members, messages, type, publicKey, privateKey , hybridKey } = action.payload;
+      const { id, name, members, messages, type, publicKey, privateKey } = action.payload;
 
       const roomIndex = state.rooms.findIndex((room) => room.id == id);
       if (roomIndex === -1) {
@@ -21,7 +21,6 @@ const roomSlice = createSlice({
           id,
           name,
           members,
-          hybridKey,
           publicKey,
           privateKey,
           messages,
@@ -31,11 +30,11 @@ const roomSlice = createSlice({
     },
 
     addMessageToRoom: (state, action) => {
-      const { from, to, time, content } = action.payload;
+      const { from, to, hybridKey, time, content } = action.payload;
       const roomIndex = state.rooms.findIndex((room) => room.id === to);
 
       if (roomIndex !== -1) {
-        const message = { from: from, to: to, time: time, content: content };
+        const message = { from: from, to: to, hybridKey: hybridKey, time: time, content: content };
         const room = state.rooms[roomIndex];
         const isMessageAlreadyAdded = room.messages.some(
           (msg) => msg.time === time

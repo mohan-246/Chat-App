@@ -9,6 +9,31 @@ function derToArrayBuffer(der) {
   }
   return bytes.buffer;
 }
+export async function generateSymmetricKey() { 
+  if (!window.crypto || !window.crypto.subtle) {
+    throw new Error("Web Crypto API not supported in this browser");
+  }
+  const keyBuffer = await window.crypto.subtle.generateKey(
+    {
+      name: "AES-CBC",
+      length: 256
+    },
+    true, 
+    ["encrypt", "decrypt"] 
+  );
+  const exportedKey = await window.crypto.subtle.exportKey(
+    "raw",
+    keyBuffer
+  );
+  const base64Key = arrayBufferToBase64(exportedKey);
+
+  return base64Key;
+}
+
+function arrayBufferToBase64(buffer) {
+  const binary = String.fromCharCode(...new Uint8Array(buffer));
+  return btoa(binary);
+}
 
 export async function decryptMessage(encryptedBase64, privateKey) {
   const encryptedBinaryString = atob(encryptedBase64);
@@ -77,4 +102,34 @@ export async function encryptMessage(message, publicKeyDER) {
   const encryptedBase64 = btoa(String.fromCharCode(...new Uint8Array(encryptedData)));
 
   return encryptedBase64;
+}
+export async function encryptDataWithSymmetricKey(data, key) {
+  const iv = window.crypto.getRandomValues(new Uint8Array(16));
+  const keyBuffer = Uint8Array.from(atob(key), c => c.charCodeAt(0)).buffer;
+  const importedKey = await window.crypto.subtle.importKey(
+    'raw',
+    keyBuffer,
+    { name: 'AES-CBC' },
+    false,
+    ['encrypt']
+  );
+
+  const dataBuffer = new TextEncoder().encode(data);
+  const encryptedData = await window.crypto.subtle.encrypt(
+    {
+      name: 'AES-CBC',
+      iv: iv,
+    },
+    importedKey,
+    dataBuffer
+  );
+  
+  const encryptedDataArray = new Uint8Array(encryptedData);
+  const encryptedDataBase64 = btoa(String.fromCharCode(...encryptedDataArray));
+  const ivBase64 = btoa(String.fromCharCode(...iv));
+
+  return {
+    iv: ivBase64,
+    encryptedData: encryptedDataBase64
+  };
 }

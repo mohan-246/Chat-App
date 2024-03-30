@@ -12,7 +12,7 @@ function generateRandomKeyPair(){
       format: 'der'
     }
   });
-  console.log(publicKey.toString('base64') ,'\n', privateKey.toString('base64'))
+
   return [publicKey , privateKey]
   }
 
@@ -38,9 +38,5 @@ function generateRandomKeyPair(){
     decrypted += decipher.final('utf8');
     return decrypted;
   }
+
   
-  const key = generateSymmetricKey()
-  const word = 'it is what it iss'
-  const encrypted = encryptDataWithSymmetricKey(word , key)
-  const decrypted = decryptDataWithSymmetricKey(encrypted.encryptedData , key ,encrypted.iv)
-  console.log(key ,'\n', encrypted ,'\n', decrypted)

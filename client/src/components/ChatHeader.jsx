@@ -25,7 +25,7 @@ const ChatHeader = ({
         `bg-[#edededff] py-2 h-[60px] text-lg mr-2 flex items-center relative`
       }
     >
-    <div className="rounded-xl  bg-[#f5f5f5ff] h-[44px] w-full p-2 flex items-center gap-2">
+    <div className="rounded-xl  bg-[#f5f5f5ff] h-[44px] w-full p-2 flex items-center gap-3">
 
     
       <div > 

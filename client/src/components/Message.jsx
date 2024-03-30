@@ -24,25 +24,18 @@ const Message = ({
   useEffect(() => {
     async function decryptContent() {
       try {
-        if (message.from === "io") {
-          setDecryptedMessage(message.content);
-        } else {
+       
           const Decrypter = import.meta.env.VITE_DECRYPT_KEY;
-          const decryptedHybridKey = await decryptMessage(
-            memoizedRoom.hybridKey,
-            Decrypter
-          );
-          const DecryptedKey = decryptDataWithSymmetricKey(
-            memoizedRoom.privateKey.encryptedData,
+          const decryptedPrivateKey = decryptDataWithSymmetricKey(memoizedRoom.privateKey.encryptedData , Decrypter , memoizedRoom.privateKey.iv)
+          const decryptedHybridKey = await decryptMessage(message.hybridKey , decryptedPrivateKey)
+          const decryptedMessage = decryptDataWithSymmetricKey(
+            message.content.encryptedData,
             decryptedHybridKey,
-            memoizedRoom.privateKey.iv
+            message.content.iv
           );
-          const decryptedContent = await decryptMessage(
-            message.content,
-            DecryptedKey
-          );
-          setDecryptedMessage(decryptedContent);
-        }
+          
+          setDecryptedMessage(decryptedMessage);
+        
       } catch (error) {
         console.error("Error decrypting message:", error);
       }
@@ -81,7 +74,7 @@ const Message = ({
         // onClick={() => handleInfoClick(message.time)}
       >
         <p className={`text-[10px] max-w-[80%] text-[#7d7d8aff] capitalize`}>
-          {users
+          { message.from != prevMessage && users
             .filter(
               (u) =>
                 u.id == message.from &&
