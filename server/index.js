@@ -56,11 +56,10 @@ const io = new Server(server
   , 
   {
   cors: {
-    origin: "https://chat-frontend-n5np.onrender.com/",
-  },
+    origin: "https://chat-frontend-n5np.onrender.com",
+  }, 
 }
 );
-app.use(cors());
 
 mongoose.connect(MongoURL,{
   useNewUrlParser: true
