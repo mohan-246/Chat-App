@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
 import { useRef, useEffect } from "react";
-import * as colors from "../functions/colors";
 
 const ChatInput = ({ sendMessage, setMessage, message, curChat }) => {
   const inputRef = useRef(null);

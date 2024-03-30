@@ -44,6 +44,7 @@ const User = mongoose.model("User", UserSchema);
 
 const UserMap = new Map();
 const Encrypter = process.env.ENCRYPT_KEY
+const MongoURL = process.env.MONGODB_URL
 const RoomMap = {};
 const app = express();
 const server = http.createServer(app,{});
@@ -51,14 +52,13 @@ const io = new Server(server
   , 
   {
   cors: {
-    // origin: "https://chat-frontend-n5np.onrender.com/",
-    origin: "*",
+    origin: "https://chat-frontend-n5np.onrender.com/",
   },
 }
 );
 app.use(cors());
 
-mongoose.connect("mongodb://127.0.0.1:27017/chatapp" ,{
+mongoose.connect(MongoURL,{
   useNewUrlParser: true
 });
 

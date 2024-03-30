@@ -9,7 +9,7 @@ import ChatHeader from "./ChatHeader";
 import ChatInput from "./ChatInput";
 import AddMembersPanel from "./AddMembersPanel";
 import Message from "./Message";
-import { decryptDataWithSymmetricKey , decryptMessage , encryptMessage , generateSymmetricKey , encryptDataWithSymmetricKey } from "../functions/encrypt";
+import {  encryptMessage , generateSymmetricKey , encryptDataWithSymmetricKey } from "../functions/encrypt";
 import ShowMembers from "./ShowMembers";
 
 const ChatBox = ({ socket }) => {
@@ -18,7 +18,6 @@ const ChatBox = ({ socket }) => {
   const curChat = useSelector((state) => state.User.curChat);
   const rooms = useSelector((state) => state.Room.rooms);
   const users = useSelector((state) => state.Users.users);
-  const myRooms = useSelector((state) => state.User.myrooms);
   
   const FinalRef = useRef();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -110,7 +109,6 @@ const ChatBox = ({ socket }) => {
         content: encryptedData,
       };
       socket.emit("send-message", encryptedMessage);
-      // dispatch(addMessageToRoom(encryptedMessage));
     }
     catch(err){
       console.log("Error while encrypting message ",err)

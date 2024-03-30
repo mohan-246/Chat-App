@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import MessageList from "../components/MessageList";
 import ChatBox from "../components/ChatBox";
 import { useDispatch } from "react-redux";
@@ -29,8 +29,7 @@ const ChatPage = () => {
     dispatch(setImage(user.imageUrl))
     socket.emit("user-change",{fullName : user.fullName, imageUrl : user.imageUrl, username : user.username})
   }
-  async function fetchData() {
-    console.log(user)
+  async function fetchData() { 
     const me = await checkUser(user.id);
     const users = await getUsers();
     const rooms = await getRooms(user.id);

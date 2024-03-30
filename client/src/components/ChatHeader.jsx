@@ -1,8 +1,6 @@
 /* eslint-disable react/prop-types */
-import { useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useSelector } from "react-redux";
-import * as colors from "../functions/colors";
 
 const ChatHeader = ({
   memoizedRoom,
