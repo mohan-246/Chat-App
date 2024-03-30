@@ -47,6 +47,10 @@ const Encrypter = process.env.ENCRYPT_KEY
 const MongoURL = process.env.MONGODB_URL
 const RoomMap = {};
 const app = express();
+const corsOptions = {
+  origin: 'https://chat-frontend-n5np.onrender.com'
+};
+app.use(cors(corsOptions));
 const server = http.createServer(app,{});
 const io = new Server(server
   , 
