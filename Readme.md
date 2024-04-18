@@ -35,16 +35,16 @@ Before you begin, ensure you have met the following requirements:
 
 ### Client
 
-cd client
-npm install
-npm run dev
+#cd client
+#npm install
+#npm run dev
 The above commands will navigate to the client directory, install the necessary dependencies, and start the development server.
 
 ### Server
 
-cd server
-npm install
-nodemon index.js
+#cd server
+#npm install
+#nodemon index.js
 The above commands will navigate to the server directory, install the necessary dependencies, and start the Node.js server using Nodemon.
 
 Make sure to configure your MongoDB connection in the server's index.js file.
