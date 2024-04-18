@@ -232,6 +232,7 @@ io.on("connection", (socket) => {
           id: uuidv4(),
           type: type,
           members: users,
+          createdBy: userId,
           publicKey: publicKeyBase64, //room to improve
           privateKey: privateKeyBase64Encrypted,
           name: groupName,
