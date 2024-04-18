@@ -8,7 +8,7 @@ import { addRoom, setRoom } from "../redux/RoomSlice";
 import SearchInput from "./SearchInput";
 import { updateUser } from "../redux/UsersSlice";
 import Room from "./Room";
-import { myMessageColor } from "../functions/colors";
+import { generateSymmetricKey , encryptMessage , encryptDataWithSymmetricKey} from "../functions/encrypt";
 import FoundUser from "./FoundUser";
 
 const MessageList = ({ socket }) => {
@@ -159,9 +159,32 @@ const MessageList = ({ socket }) => {
   const handlePrivateRoomExists = () => {
     window.alert("private chat with user already exists");
   };
+  const sendIoMessage = async (ioMessage , publicKey , room) => {
+    try{
+      const hybridKey = await generateSymmetricKey()
+      const encryptedHybridKey = await encryptMessage(hybridKey , publicKey)
+      const encryptedData = await encryptDataWithSymmetricKey(ioMessage , hybridKey);
+      const encryptedMessage = {
+        from: 'io',
+        to: room,
+        hybridKey: encryptedHybridKey,
+        time: String(new Date().getTime()),
+        content: encryptedData,
+      };
+      socket.emit("send-message", encryptedMessage);
+      // dispatch(addMessageToRoom(encryptedMessage));
+    }
+    catch(err){
+      console.log("Error while encrypting message ",err)
+    }
+    
+  }
   const handleCheckedRoom = (room) => {
     dispatch(addRoom(room));
     socket.emit("join-chat", room.id);
+    if(room.type == 'group' && room.createdBy == user.id){
+      sendIoMessage(`${user.fullName} created ${room.name}` , room.publicKey , room.id)
+    }
     dispatch(
       joinRoom({
         id: room.id,
