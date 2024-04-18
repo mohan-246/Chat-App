@@ -18,6 +18,7 @@ A simple chat application built with [React](https://reactjs.org/), [Node.js](ht
 - Real-time chat functionality
 - Private and group chat options
 - User authentication
+- End to End encryption
 - MongoDB integration for storing chat data
 - Responsive UI
 - User Profile Customization
@@ -53,7 +54,7 @@ Make sure to configure your MongoDB connection in the server's index.js file.
 Open your browser and navigate to http://localhost:5173 to access the chat app.
 Sign in or register to start chatting.
 Create private or group chats, or join existing ones.
-Enjoy real-time communication with other users!
+Enjoy real-time communication with other users securely!
 
 ### Contributing
 Contributions are welcome! Feel free to submit issues or pull requests.
