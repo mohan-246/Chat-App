@@ -41,8 +41,7 @@ npm run dev
 The above commands will navigate to the client directory, install the necessary dependencies, and start the development server.
 
 ### Server
-bash
-Copy code
+
 cd server
 npm install
 nodemon index.js
