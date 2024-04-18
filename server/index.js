@@ -19,6 +19,7 @@ const UserSchema = new mongoose.Schema({
 const Rooms = mongoose.model("Rooms", {
   id: String,
   type: String,
+  createdBy: String,
   name: String,
   publicKey: String,
   privateKey:{
@@ -247,16 +248,7 @@ io.on("connection", (socket) => {
       const publicKeyBase64 =  publicKey.toString('base64');
         const privateKeyBase64 =  privateKey.toString('base64');  
         const privateKeyBase64Encrypted = encryptDataWithSymmetricKey(privateKeyBase64 , Encrypter)
-        const hybridKey = generateSymmetricKey()
-        const firstMessage = encryptDataWithSymmetricKey(`${name} created "${groupName}"`,hybridKey)
-        const encryptedHybridKey = await encryptMessage(hybridKey, publicKeyBase64)
-      let message = {
-        from: "io",
-        to: newRoomId,
-        hybridKey: encryptedHybridKey,
-        time: String(new Date().getTime()),
-        content:firstMessage,
-      };
+        
       const newRoom = new Rooms({
         id: newRoomId,
         type: type,
@@ -264,7 +256,8 @@ io.on("connection", (socket) => {
         publicKey: publicKeyBase64, //room to improve
         privateKey: privateKeyBase64Encrypted,
         name: groupName,
-        messages: [message],
+        createdBy: userId,
+        messages: [],
       });
       saveRoomAndEmit(newRoom, users, UserMap);
     }
